@@ -1,0 +1,20 @@
+[Unit]
+Description=Firemka health, certificate and disk check
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=__PROJECT_DIR__/deploy/scripts/operations/monitor-health.sh https://__FIREMKA_DOMAIN__ /var/lib/docker
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true

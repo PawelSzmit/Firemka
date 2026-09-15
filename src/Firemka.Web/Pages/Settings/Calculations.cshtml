@@ -1,0 +1,103 @@
+@page "/Settings/Calculations"
+@model Firemka.Web.Pages.Settings.CalculationsModel
+@using System.Globalization
+@using Firemka.Domain.Calculations
+@{
+    ViewData["Title"] = "Zasady obliczeń";
+    var culture = CultureInfo.GetCultureInfo("pl-PL");
+}
+
+<header class="page-intro">
+    <p class="eyebrow">Ustawienia</p>
+    <h1>Zasady obliczeń za @Model.SelectedYear rok</h1>
+    <p>Tu sprawdzisz wartości używane do technicznych szacunków oraz zapiszesz niezależne potwierdzenie.</p>
+</header>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+
+<firemka-validation-summary summary="All" class="alert alert-danger" role="alert" />
+
+@if (Model.Company is null)
+{
+    <section class="empty-state">
+        <h2>Najpierw skonfiguruj firmę</h2>
+        <a class="btn btn-primary" asp-page="/Setup/Company">Przejdź do konfiguracji</a>
+    </section>
+}
+else if (Model.RuleSet is null)
+{
+    <section class="notice-card">
+        <h2>Brak zasad dla roku @Model.SelectedYear</h2>
+        <p>Aplikacja nie kopiuje ustawień z innego roku. Najpierw trzeba przygotować i niezależnie sprawdzić aktualne wartości.</p>
+    </section>
+}
+else
+{
+    <section class="@(Model.RuleSet.Trust == CalculationRuleTrust.ReferenceOnly ? "notice-card" : "form-section confirmed-rules")" role="status">
+        <h2>@(Model.RuleSet.Trust == CalculationRuleTrust.ReferenceOnly
+            ? "Materiał referencyjny — wymaga niezależnego potwierdzenia"
+            : $"Niezależnie potwierdzone zasady — wersja {Model.RuleSet.VersionNumber}")</h2>
+        @if (Model.RuleSet.Trust == CalculationRuleTrust.ReferenceOnly)
+        {
+            <p>Oficjalne źródła pomagają sprawdzić liczby, ale same nie potwierdzają sytuacji Twojej firmy.</p>
+        }
+        else
+        {
+            <p>Odniesienie: @Model.RuleSet.IndependentEvidenceReference · data @Model.RuleSet.ConfirmedOn?.ToString("dd.MM.yyyy", culture)</p>
+        }
+    </section>
+
+    <section class="form-section calculation-rules-card">
+        <h2>Wartości zapisane w wersji @Model.RuleSet.VersionNumber</h2>
+        <dl class="rule-values">
+            <div><dt>Próg pierwszej stawki PIT</dt><dd>@Model.RuleSet.Values.PitThreshold.ToString("N2", culture) zł</dd></div>
+            <div><dt>Niższa stawka PIT</dt><dd>@Model.RuleSet.Values.PitLowerRatePercent.ToString("N2", culture)%</dd></div>
+            <div><dt>Wyższa stawka PIT</dt><dd>@Model.RuleSet.Values.PitHigherRatePercent.ToString("N2", culture)%</dd></div>
+            <div><dt>Kwota zmniejszająca podatek</dt><dd>@Model.RuleSet.Values.PitReducingAmount.ToString("N2", culture) zł</dd></div>
+            <div><dt>Próg możliwego odroczenia zaliczki</dt><dd>@Model.RuleSet.Values.PitPaymentOptionThreshold.ToString("N2", culture) zł</dd></div>
+            <div><dt>Stawka składki zdrowotnej</dt><dd>@Model.RuleSet.Values.HealthRatePercent.ToString("N2", culture)%</dd></div>
+            <div><dt>Minimalna podstawa w styczniu</dt><dd>@Model.RuleSet.Values.HealthMinimumBeforeChange.ToString("N2", culture) zł</dd></div>
+            <div><dt>Minimalna podstawa od lutego</dt><dd>@Model.RuleSet.Values.HealthMinimumFromChange.ToString("N2", culture) zł</dd></div>
+        </dl>
+        <p class="source-captured">Źródła sprawdzono @Model.RuleSet.CapturedOn.ToString("dd.MM.yyyy", culture).</p>
+        <ul class="official-source-list">
+        @foreach (var source in Model.RuleSet.OfficialSources.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var uri = new Uri(source);
+            <li><a href="@source" target="_blank" rel="noopener noreferrer">@uri.Host — otwórz oficjalne źródło</a></li>
+        }
+        </ul>
+    </section>
+
+    @if (Model.RuleSet.Trust == CalculationRuleTrust.ReferenceOnly)
+    {
+        <section class="form-section independent-confirmation">
+            <h2>Zapisz niezależne potwierdzenie</h2>
+            <p>Potwierdzenie utworzy nową wersję. Nie zmieni materiału referencyjnego ani wcześniejszych obliczeń.</p>
+            <form method="post" asp-page-handler="Confirm" asp-route-year="@Model.SelectedYear" class="compact-form">
+                <div class="form-check">
+                    <input asp-for="Confirmation.IndependentVerificationConfirmed"
+                           class="form-check-input"
+                           data-val="true"
+                           data-val-mustbetrue="Zaznacz niezależną weryfikację." />
+                    <label asp-for="Confirmation.IndependentVerificationConfirmed" class="form-check-label"></label>
+                    <span asp-validation-for="Confirmation.IndependentVerificationConfirmed" class="text-danger d-block"></span>
+                </div>
+                <label asp-for="Confirmation.EvidenceReference" class="form-label"></label>
+                <textarea asp-for="Confirmation.EvidenceReference" class="form-control" rows="2"></textarea>
+                <span asp-validation-for="Confirmation.EvidenceReference" class="text-danger"></span>
+                <label asp-for="Confirmation.ConfirmedOn" class="form-label"></label>
+                <input asp-for="Confirmation.ConfirmedOn" type="date" class="form-control" />
+                <span asp-validation-for="Confirmation.ConfirmedOn" class="text-danger"></span>
+                <button type="submit" class="btn btn-primary">Utwórz potwierdzoną wersję</button>
+            </form>
+        </section>
+    }
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

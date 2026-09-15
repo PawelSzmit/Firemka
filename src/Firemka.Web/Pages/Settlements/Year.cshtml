@@ -1,0 +1,251 @@
+@page
+@model Firemka.Web.Pages.Settlements.YearModel
+@using System.Globalization
+@using Firemka.Application.Time
+@using Firemka.Domain.AnnualClosing
+@using Firemka.Domain.Filings
+@{
+    ViewData["Title"] = $"Zamknięcie roku {Model.SelectedYear}";
+    var culture = CultureInfo.GetCultureInfo("pl-PL");
+    string Money(decimal value) => value.ToString("N2", culture) + " zł";
+    string Moment(DateTimeOffset value) => PolishBusinessTime.ToWarsawTime(value).ToString("dd.MM.yyyy HH:mm", culture);
+    string JpkStatus(FilingArtifactStatus value) => value switch
+    {
+        FilingArtifactStatus.ApprovalRequired => "Wymaga zatwierdzenia",
+        FilingArtifactStatus.Approved => "Zatwierdzony do ręcznego eksportu",
+        FilingArtifactStatus.Sent => "Oznaczony jako wysłany ręcznie",
+        FilingArtifactStatus.Accepted => "Przyjęty",
+        FilingArtifactStatus.Rejected => "Odrzucony",
+        _ => value.ToString(),
+    };
+}
+
+<header class="page-intro">
+    <p class="eyebrow">Rozliczenia · @Model.SelectedYear</p>
+    <h1>Zamknięcie roku</h1>
+    <p>Sprawdź wszystkie miesiące, potwierdź dane roczne i przygotuj roczny JPK_PKPIR oraz PDF do zewnętrznego programu PIT.</p>
+</header>
+
+@if (Model.StatusMessage is not null)
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+<firemka-validation-summary summary="All" class="text-danger" role="alert" />
+
+<section class="notice-card">
+    <h2>Ważna granica</h2>
+    <p>Firemka nie tworzy pełnego PIT-36 ani PIT/B. PDF obejmuje tylko dane działalności. Dochody z etatu, wspólne rozliczenie, ulgi i inne dane uzupełnisz w używanej aplikacji PIT.</p>
+</section>
+
+@if (Model.Workspace.Blockers.Count > 0)
+{
+    <section class="form-section" data-testid="annual-blockers">
+        <h2>Co trzeba dokończyć</h2>
+        <ul>
+            @foreach (var blocker in Model.Workspace.Blockers)
+            {
+                <li><a href="@blocker.ActionUrl">@blocker.Message</a></li>
+            }
+        </ul>
+    </section>
+}
+
+<section class="form-section" id="declaration">
+    <h2>1. Potwierdzone dane roczne</h2>
+    @if (Model.Workspace.LatestClosing?.Status == AnnualClosingStatus.Closed)
+    {
+        <div class="alert alert-info">Rok jest zamknięty i dostępny tylko do odczytu. Najpierw rozpocznij korektę, aby zmienić dane.</div>
+    }
+    else
+    {
+        <form method="post" asp-page-handler="Declaration" asp-route-year="@Model.SelectedYear" class="compact-form">
+            <label asp-for="Declaration.OpeningInventory"></label>
+            <input asp-for="Declaration.OpeningInventory" class="form-control" inputmode="decimal" />
+            <span asp-validation-for="Declaration.OpeningInventory" class="text-danger"></span>
+            <label asp-for="Declaration.ClosingInventory"></label>
+            <input asp-for="Declaration.ClosingInventory" class="form-control" inputmode="decimal" />
+            <span asp-validation-for="Declaration.ClosingInventory" class="text-danger"></span>
+            <label asp-for="Declaration.PitAdvancesPaid"></label>
+            <input asp-for="Declaration.PitAdvancesPaid" class="form-control" inputmode="decimal" />
+            <span asp-validation-for="Declaration.PitAdvancesPaid" class="text-danger"></span>
+            <label asp-for="Declaration.HealthContributionsPaid"></label>
+            <input asp-for="Declaration.HealthContributionsPaid" class="form-control" inputmode="decimal" />
+            <span asp-validation-for="Declaration.HealthContributionsPaid" class="text-danger"></span>
+            <label asp-for="Declaration.EvidenceReference"></label>
+            <textarea asp-for="Declaration.EvidenceReference" class="form-control" rows="2"></textarea>
+            <span asp-validation-for="Declaration.EvidenceReference" class="text-danger"></span>
+            <label asp-for="Declaration.ConfirmedOn"></label>
+            <input asp-for="Declaration.ConfirmedOn" class="form-control" type="date" />
+            <span asp-validation-for="Declaration.ConfirmedOn" class="text-danger"></span>
+            <label class="form-check">
+                <input asp-for="Declaration.IndependentVerificationConfirmed" class="form-check-input" />
+                <span>@Html.DisplayNameFor(model => model.Declaration.IndependentVerificationConfirmed)</span>
+            </label>
+            <button type="submit" class="btn btn-primary">Zapisz potwierdzone dane</button>
+        </form>
+    }
+</section>
+
+@if (Model.Workspace.Preview is { } preview)
+{
+    <section class="form-section" data-testid="annual-summary">
+        <h2>2. Podsumowanie firmowe</h2>
+        <dl class="history-values">
+            <div><dt>Przychody</dt><dd>@Money(preview.Revenue)</dd></div>
+            <div><dt>Koszty przed spisem</dt><dd>@Money(preview.CostsBeforeInventory)</dd></div>
+            <div><dt>Koszty po spisie</dt><dd>@Money(preview.CostsAfterInventory)</dd></div>
+            <div><dt>@(preview.PitIncome >= 0 ? "Dochód" : "Strata")</dt><dd>@Money(Math.Abs(preview.PitIncome))</dd></div>
+            <div><dt>Zaliczki PIT należne</dt><dd>@Money(preview.PitAdvancesDue)</dd></div>
+            <div><dt>Zaliczki PIT wpłacone</dt><dd>@Money(preview.PitAdvancesPaid)</dd></div>
+            <div><dt>Zdrowotna należna rocznie</dt><dd>@Money(preview.AnnualHealthContributionDue)</dd></div>
+            <div><dt>Suma miesięcznych składek należnych</dt><dd>@Money(preview.HealthContributionsDueMonthly)</dd></div>
+            <div><dt>@(preview.HealthSettlementDifference >= 0 ? "Różnica roczna do dopłaty w ZUS" : "Roczna nadpłata do weryfikacji w ZUS")</dt><dd>@Money(Math.Abs(preview.HealthSettlementDifference))</dd></div>
+            <div><dt>Zdrowotna wpłacona</dt><dd>@Money(preview.HealthContributionsPaid)</dd></div>
+            <div><dt>@(preview.HealthPaymentDifference >= 0 ? "Różnica rocznej należności i wpłat" : "Wpłaty ponad roczną należność")</dt><dd>@Money(Math.Abs(preview.HealthPaymentDifference))</dd></div>
+        </dl>
+        <div class="alert alert-warning">Roczne rozliczenie zdrowotnej musi zostać ponownie sprawdzone według zasad właściwych dla tego roku.</div>
+    </section>
+}
+
+<section class="form-section">
+    <h2>3. Miesiące ujęte w podsumowaniu</h2>
+    <div class="table-responsive">
+        <table class="table">
+            <thead><tr><th>Miesiąc</th><th>Przychód</th><th>Koszty</th><th>Zaliczka PIT</th></tr></thead>
+            <tbody>
+            @foreach (var month in Model.Workspace.Months)
+            {
+                <tr><td>@month.Month.ToString("MMMM yyyy", culture)</td><td>@Money(month.Revenue)</td><td>@Money(month.Costs)</td><td>@Money(month.PitAdvanceDue)</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+@if (Model.Workspace.LatestClosing?.Status != AnnualClosingStatus.Closed)
+{
+    <section class="form-section">
+        <h2>4. Zamknięcie</h2>
+        <p>Zamknięcie zapisze dokładne wersje miesięcy oraz nowe prywatne pliki PDF i XML.</p>
+        <form method="post" asp-page-handler="Close" asp-route-year="@Model.SelectedYear">
+            <label class="form-check mb-3">
+                <input asp-for="CloseConfirmation.IndependentResultConfirmed" class="form-check-input" />
+                <span>@Html.DisplayNameFor(model => model.CloseConfirmation.IndependentResultConfirmed)</span>
+            </label>
+            <span asp-validation-for="CloseConfirmation.IndependentResultConfirmed" class="text-danger"></span>
+            <button type="submit" class="btn btn-warning" disabled="@(Model.Workspace.Blockers.Count > 0)">Zamknij rok</button>
+        </form>
+    </section>
+}
+
+@foreach (var closing in Model.Workspace.ClosingHistory)
+{
+    var isLatest = Model.Workspace.LatestClosing?.Id == closing.Id;
+    <section class="form-section" data-testid="annual-version-@closing.VersionNumber">
+        <p class="eyebrow">Wersja @closing.VersionNumber</p>
+        <h2>@(closing.Status == AnnualClosingStatus.Closed ? "Zamknięta wersja roku" : "Otwarta korekta")</h2>
+        <p>
+            Utworzono @Moment(closing.CreatedAtUtc)
+            @if (closing.CorrectionReason is not null)
+            {
+                <text> · powód: @closing.CorrectionReason</text>
+            }
+        </p>
+        @if (closing.Status == AnnualClosingStatus.Closed)
+        {
+            <p><strong>Roczny JPK: @JpkStatus(closing.JpkStatus)</strong></p>
+            <dl class="history-values">
+                @if (closing.JpkApprovedAtUtc is DateTimeOffset approvedAt)
+                {
+                    <div><dt>Zatwierdzono</dt><dd>@Moment(approvedAt)<br /><small>@closing.JpkApprovalEvidence</small></dd></div>
+                }
+                @if (closing.JpkSentAtUtc is DateTimeOffset sentAt)
+                {
+                    <div><dt>Wysłano ręcznie</dt><dd>@Moment(sentAt)<br /><small>@closing.JpkManualSubmissionReference</small></dd></div>
+                }
+                @if (closing.JpkOutcomeAtUtc is DateTimeOffset outcomeAt)
+                {
+                    <div><dt>Wynik zapisano</dt><dd>@Moment(outcomeAt)<br /><small>@closing.JpkOutcomeReference</small></dd></div>
+                }
+            </dl>
+            <div class="d-flex flex-wrap gap-2">
+                <form method="post" asp-page-handler="Download" asp-route-fileId="@closing.PdfStoredFileId" asp-route-year="@Model.SelectedYear">
+                    <button type="submit" class="btn btn-primary">Pobierz zestawienie roczne PDF</button>
+                </form>
+                <form method="post" asp-page-handler="Download" asp-route-fileId="@closing.JpkStoredFileId" asp-route-year="@Model.SelectedYear">
+                    <button type="submit" class="btn btn-outline-primary">Pobierz roczny JPK_PKPIR</button>
+                </form>
+            </div>
+            @if (isLatest && closing.JpkStatus == FilingArtifactStatus.ApprovalRequired)
+            {
+                <form method="post" asp-page-handler="ApproveJpk" asp-route-year="@Model.SelectedYear" class="compact-form mt-3">
+                    <input type="hidden" name="JpkAction.AnnualClosingId" value="@closing.Id" />
+                    <label for="approve-jpk-@closing.Id">Co porównano z zamknięciem roku?</label>
+                    <textarea id="approve-jpk-@closing.Id" name="JpkAction.Reference" class="form-control" rows="2" required></textarea>
+                    <button type="submit" class="btn btn-primary">Zatwierdź tę wersję JPK</button>
+                </form>
+            }
+            @if (isLatest && closing.JpkStatus == FilingArtifactStatus.Approved)
+            {
+                <details class="mt-3">
+                    <summary>Plik został wysłany ręcznie</summary>
+                    <form method="post" asp-page-handler="SentJpk" asp-route-year="@Model.SelectedYear" class="compact-form">
+                        <input type="hidden" name="JpkAction.AnnualClosingId" value="@closing.Id" />
+                        <label for="sent-jpk-@closing.Id">Gdzie i kiedy wysłano?</label>
+                        <textarea id="sent-jpk-@closing.Id" name="JpkAction.Reference" class="form-control" rows="2" required></textarea>
+                        <button type="submit" class="btn btn-warning">Oznacz jako wysłany ręcznie</button>
+                    </form>
+                </details>
+            }
+            @if (closing.JpkStatus == FilingArtifactStatus.Sent)
+            {
+                <form method="post" asp-page-handler="JpkOutcome" asp-route-year="@Model.SelectedYear" enctype="multipart/form-data" class="compact-form mt-3">
+                    <input type="hidden" name="JpkOutcome.AnnualClosingId" value="@closing.Id" />
+                    <label for="jpk-result-@closing.Id">Wynik</label>
+                    <select id="jpk-result-@closing.Id" name="JpkOutcome.Result" class="form-select">
+                        <option value="Accepted">Przyjęty</option>
+                        <option value="Rejected">Odrzucony</option>
+                    </select>
+                    <label for="jpk-receipt-@closing.Id">UPO lub potwierdzenie</label>
+                    <input id="jpk-receipt-@closing.Id" name="JpkOutcome.Receipt" type="file" class="form-control" accept=".xml,.pdf,.png,.jpg,.jpeg" required />
+                    <label for="jpk-outcome-reference-@closing.Id">Numer UPO albo opis odrzucenia</label>
+                    <textarea id="jpk-outcome-reference-@closing.Id" name="JpkOutcome.Reference" class="form-control" rows="2" required></textarea>
+                    <button type="submit" class="btn btn-primary">Zapisz wynik przy tej wersji</button>
+                </form>
+            }
+            @if (closing.JpkReceiptStoredFileId is Guid receiptFileId)
+            {
+                <form method="post" asp-page-handler="Download" asp-route-fileId="@receiptFileId" asp-route-year="@Model.SelectedYear" class="mt-3">
+                    <button type="submit" class="btn btn-outline-primary">Pobierz UPO lub potwierdzenie</button>
+                </form>
+            }
+        }
+    </section>
+}
+
+<section class="notice-card">
+    <h2>Jak wysłać roczny JPK ręcznie</h2>
+    <ol>
+        <li>Pobierz plik, otwórz go w aktualnym Kliencie JPK WEB i porównaj z zamknięciem roku.</li>
+        <li>Zatwierdź dokładnie tę wersję, a po samodzielnej wysyłce zapisz jej referencję.</li>
+        <li>Dodaj UPO albo komunikat odrzucenia. Firemka nie wysyła pliku automatycznie.</li>
+    </ol>
+</section>
+
+@if (Model.Workspace.LatestClosing?.Status == AnnualClosingStatus.Closed)
+{
+    <section class="form-section">
+        <h2>Korekta roku</h2>
+        <form method="post" asp-page-handler="Correction" asp-route-year="@Model.SelectedYear" class="compact-form">
+            <label asp-for="Correction.Reason"></label>
+            <textarea asp-for="Correction.Reason" class="form-control" rows="2"></textarea>
+            <span asp-validation-for="Correction.Reason" class="text-danger"></span>
+            <button type="submit" class="btn btn-warning">Rozpocznij korektę</button>
+        </form>
+    </section>
+}
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

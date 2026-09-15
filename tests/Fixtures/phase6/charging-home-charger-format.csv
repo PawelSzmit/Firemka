@@ -1,0 +1,4 @@
+session_id,device_id,status,started_at,stopped_at,time [s],energy [Wh],power [W], tag NFC, tag NFC ID
+synthetic-a,EVSE-SYNTHETIC,COMPLETED,2026-07-02 17:26:33,2026-07-02 17:34:14,461,64,498,undefined,undefined
+synthetic-b,EVSE-SYNTHETIC,COMPLETED,2026-07-02 21:59:59,2026-07-03 03:02:56,18177,42335,8384,undefined,undefined
+synthetic-c,EVSE-SYNTHETIC,ABORTED,2026-07-25 06:58:22,2026-07-25 07:04:01,339,87,972,undefined,undefined

@@ -1,0 +1,46 @@
+@page
+@model Firemka.Web.Pages.Books.IndexModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Księgi";
+    var culture = CultureInfo.GetCultureInfo("pl-PL");
+}
+
+<div class="page-intro">
+    <div class="eyebrow">Zapisy kosztowe</div>
+    <h1>Księgi @Model.Year</h1>
+    <p>KPiR i VAT są zapisywane oddzielnie, ale zawsze wskazują ten sam dokument i dokładną wersję decyzji.</p>
+</div>
+
+<form method="get" class="d-flex gap-2 align-items-end mb-4">
+    <div><label for="year" class="form-label">Rok</label><input id="year" name="year" value="@Model.Year" type="number" min="2000" max="2200" class="form-control" /></div>
+    <button class="btn btn-outline-primary" type="submit">Pokaż</button>
+</form>
+
+<section class="form-section mb-4">
+    <h2>KPiR</h2>
+    <div class="table-responsive"><table class="table"><thead><tr><th>Okres</th><th>Dokument</th><th>Kategoria</th><th>Kwota</th><th>Tryb</th><th>Reguła</th></tr></thead><tbody>
+    @foreach (var entry in Model.Kpir)
+    {
+        <tr><td>@entry.Period.ToString("MM.yyyy")</td><td><a asp-page="/Invoices/Incoming/Details" asp-route-id="@entry.SourceDocumentId">Otwórz</a></td><td>@entry.Category</td><td>@(entry.Included ? $"{entry.Amount.ToString("N2", culture)} zł" : "Nie ujęto")</td><td>@(entry.Automatic ? "automatycznie" : "ręcznie")</td><td>@(entry.RuleVersion is null ? "tylko dokument" : $"v{entry.RuleVersion}")</td></tr>
+    }
+    </tbody></table></div>
+    @if (Model.Kpir.Count == 0)
+    {
+        <p>Brak wpisów KPiR w tym roku.</p>
+    }
+</section>
+
+<section class="form-section">
+    <h2>Rejestr VAT zakupów</h2>
+    <div class="table-responsive"><table class="table"><thead><tr><th>Okres</th><th>Dokument</th><th>VAT naliczony</th><th>VAT do odliczenia</th><th>Tryb</th><th>Reguła</th></tr></thead><tbody>
+    @foreach (var entry in Model.Vat)
+    {
+        <tr><td>@entry.Period.ToString("MM.yyyy")</td><td><a asp-page="/Invoices/Incoming/Details" asp-route-id="@entry.SourceDocumentId">Otwórz</a></td><td>@entry.InputVatAmount.ToString("N2", culture) zł</td><td>@(entry.Included ? $"{entry.DeductibleVatAmount.ToString("N2", culture)} zł" : "Nie ujęto")</td><td>@(entry.Automatic ? "automatycznie" : "ręcznie")</td><td>@(entry.RuleVersion is null ? "tylko dokument" : $"v{entry.RuleVersion}")</td></tr>
+    }
+    </tbody></table></div>
+    @if (Model.Vat.Count == 0)
+    {
+        <p>Brak wpisów VAT w tym roku.</p>
+    }
+</section>

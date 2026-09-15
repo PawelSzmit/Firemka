@@ -1,0 +1,60 @@
+@page
+@model Firemka.Web.Pages.Settings.FilingsModel
+@{
+    ViewData["Title"] = "Dane urzędowe";
+}
+
+<header class="page-intro">
+    <p class="eyebrow">Ustawienia</p>
+    <h1>Dane do plików urzędowych</h1>
+    <p>Te dane trafiają do JPK i ZUS DRA. Każdy zapis tworzy nową wersję, a poprzednich nie usuwa.</p>
+</header>
+
+@if (Model.StatusMessage is not null)
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+
+@if (Model.CurrentProfile is not null)
+{
+    <section class="settings-summary">
+        <div>
+            <span class="card-label">Bieżąca wersja</span>
+            <strong>Wersja @Model.CurrentProfile.VersionNumber</strong>
+            <small>Sprawdzona @Model.CurrentProfile.ConfirmedOn.ToString("dd.MM.yyyy")</small>
+        </div>
+        <div>
+            <span class="card-label">Urząd skarbowy</span>
+            <strong>Kod @Model.CurrentProfile.TaxOfficeCode</strong>
+            <small>@Model.CurrentProfile.ConfirmationEvidence</small>
+        </div>
+    </section>
+}
+
+<section class="form-section">
+    <h2>Potwierdzony profil</h2>
+    <div class="alert alert-warning">
+        Firemka sprawdza format pól, ale nie potwierdza, czy kod urzędu i kod ZUS są właściwe dla Twojej sytuacji.
+    </div>
+    <form method="post" class="compact-form">
+        <firemka-validation-summary summary="All" class="text-danger" role="alert" />
+        <div class="form-grid">
+            <div class="field"><label asp-for="Input.FirstName"></label><input asp-for="Input.FirstName" class="form-control" /><span asp-validation-for="Input.FirstName" class="text-danger"></span></div>
+            <div class="field"><label asp-for="Input.LastName"></label><input asp-for="Input.LastName" class="form-control" /><span asp-validation-for="Input.LastName" class="text-danger"></span></div>
+            <div class="field"><label asp-for="Input.BirthDate"></label><input asp-for="Input.BirthDate" type="date" class="form-control" /><span asp-validation-for="Input.BirthDate" class="text-danger"></span></div>
+            <div class="field"><label asp-for="Input.Pesel"></label><input asp-for="Input.Pesel" class="form-control" inputmode="numeric" maxlength="11" /><span asp-validation-for="Input.Pesel" class="text-danger"></span></div>
+            <div class="field"><label asp-for="Input.TaxOfficeCode"></label><input asp-for="Input.TaxOfficeCode" class="form-control" inputmode="numeric" maxlength="4" /><span asp-validation-for="Input.TaxOfficeCode" class="text-danger"></span></div>
+            <div class="field"><label asp-for="Input.ZusInsuranceTitleCode"></label><input asp-for="Input.ZusInsuranceTitleCode" class="form-control" inputmode="numeric" maxlength="4" /><span asp-validation-for="Input.ZusInsuranceTitleCode" class="text-danger"></span></div>
+            <div class="field"><label asp-for="Input.Email"></label><input asp-for="Input.Email" class="form-control" /><span asp-validation-for="Input.Email" class="text-danger"></span></div>
+            <div class="field"><label asp-for="Input.ConfirmedOn"></label><input asp-for="Input.ConfirmedOn" type="date" class="form-control" /><span asp-validation-for="Input.ConfirmedOn" class="text-danger"></span></div>
+        </div>
+        <div class="field"><label asp-for="Input.ConfirmationEvidence"></label><textarea asp-for="Input.ConfirmationEvidence" class="form-control" rows="3" placeholder="Np. kod sprawdzony w wykazie urzędów i na koncie ZUS"></textarea><span asp-validation-for="Input.ConfirmationEvidence" class="text-danger"></span></div>
+        <label class="form-check"><input asp-for="Input.IndependentCheckConfirmed" class="form-check-input" /><span class="form-check-label">Potwierdzam, że dane i kody sprawdzono w aktualnych źródłach urzędowych</span></label>
+        <button type="submit" class="btn btn-primary">Zapisz potwierdzoną wersję</button>
+    </form>
+</section>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,200 @@
+@page
+@model Firemka.Web.Pages.Settings.IndexModel
+@using System.Globalization
+@using Firemka.Domain.Companies
+@{
+    ViewData["Title"] = "Ustawienia";
+    var culture = CultureInfo.GetCultureInfo("pl-PL");
+}
+
+<header class="page-intro">
+    <p class="eyebrow">Ustawienia</p>
+    <h1>Firma i okresy rozliczeniowe</h1>
+    <p>Każda zmiana obowiązuje od wskazanego miesiąca. Wcześniejsze miesiące zachowują własne ustawienia.</p>
+</header>
+
+<p><a asp-page="/Settings/Filings" class="btn btn-outline-primary">Dane do plików US i ZUS</a></p>
+
+@if (TempData["SettingsMessage"] is string message)
+{
+    <div class="alert alert-success" role="status">@message</div>
+}
+
+<firemka-validation-summary summary="All" class="text-danger" role="alert" />
+
+@if (Model.Profile is null)
+{
+    <section class="empty-state">
+        <h2>Najpierw skonfiguruj firmę</h2>
+        <a class="btn btn-primary" asp-page="/Setup/Company">Przejdź do konfiguracji</a>
+    </section>
+}
+else
+{
+    <section class="settings-summary">
+        <div>
+            <span class="card-label">Firma</span>
+            <strong>@Model.Profile.CompanyName</strong>
+            <small>NIP @Model.Profile.CompanyNip</small>
+            <small>@Model.Profile.CompanyAddress</small>
+        </div>
+        <div>
+            <span class="card-label">Stały klient</span>
+            <strong>@Model.Profile.CounterpartyName</strong>
+            <small>NIP @Model.Profile.CounterpartyNip</small>
+            <small>@Model.Profile.ServiceDescription</small>
+        </div>
+        <div>
+            <span class="card-label">Forma opodatkowania</span>
+            <strong>Skala podatkowa</strong>
+            <small>Historia ustawień VAT i ZUS znajduje się poniżej</small>
+        </div>
+    </section>
+
+    <div class="settings-grid">
+        <section class="form-section">
+            <h2>Abonament</h2>
+            <ul class="period-list">
+                @foreach (var period in Model.Profile.SubscriptionRates)
+                {
+                    <li><strong>@period.NetMonthlyAmount.ToString("N2", culture) zł netto</strong><span>od @period.ValidFromMonth.ToString("MM.yyyy", culture), VAT @period.VatRate%</span></li>
+                }
+            </ul>
+            <form method="post" asp-page-handler="Subscription" class="compact-form">
+                <label asp-for="Subscription.ValidFromMonth"></label>
+                <input asp-for="Subscription.ValidFromMonth" type="date" class="form-control" />
+                <span asp-validation-for="Subscription.ValidFromMonth" class="text-danger"></span>
+                <label asp-for="Subscription.NetMonthlyAmount"></label>
+                <input asp-for="Subscription.NetMonthlyAmount" class="form-control" inputmode="decimal" />
+                <span asp-validation-for="Subscription.NetMonthlyAmount" class="text-danger"></span>
+                <label asp-for="Subscription.VatRate"></label>
+                <input asp-for="Subscription.VatRate" class="form-control" inputmode="decimal" />
+                <span asp-validation-for="Subscription.VatRate" class="text-danger"></span>
+                <button type="submit" class="btn btn-outline-primary">Dodaj nowy okres</button>
+            </form>
+        </section>
+
+        <section class="form-section">
+            <h2>Energia</h2>
+            <ul class="period-list">
+                @foreach (var period in Model.Profile.EnergyRates)
+                {
+                    <li><strong>@period.GrossPricePerKwh.ToString("N4", culture) zł/kWh</strong><span>od @period.ValidFromMonth.ToString("MM.yyyy", culture)</span></li>
+                }
+            </ul>
+            <form method="post" asp-page-handler="Energy" class="compact-form">
+                <label asp-for="Energy.ValidFromMonth"></label>
+                <input asp-for="Energy.ValidFromMonth" type="date" class="form-control" />
+                <span asp-validation-for="Energy.ValidFromMonth" class="text-danger"></span>
+                <label asp-for="Energy.GrossPricePerKwh"></label>
+                <input asp-for="Energy.GrossPricePerKwh" class="form-control" inputmode="decimal" />
+                <span asp-validation-for="Energy.GrossPricePerKwh" class="text-danger"></span>
+                <button type="submit" class="btn btn-outline-primary">Dodaj nowy okres</button>
+            </form>
+        </section>
+
+        <section class="form-section">
+            <h2>Lata podatkowe</h2>
+            <ul class="period-list">
+                @foreach (var year in Model.Profile.TaxYears)
+                {
+                    <li><strong>@year.Year</strong><span>Skala podatkowa</span></li>
+                }
+            </ul>
+            <form method="post" asp-page-handler="OpenYear" class="compact-form">
+                <label asp-for="NewTaxYear.Year"></label>
+                <input asp-for="NewTaxYear.Year" class="form-control" inputmode="numeric" />
+                <span asp-validation-for="NewTaxYear.Year" class="text-danger"></span>
+                <button type="submit" class="btn btn-outline-primary">Otwórz rok</button>
+            </form>
+        </section>
+
+        <section class="form-section" id="vat">
+            <h2>VAT</h2>
+            <ul class="period-list">
+                @foreach (var period in Model.Profile.VatProfiles)
+                {
+                    <li>
+                        <strong>@(period.Profile == VatProfile.ActiveMonthly ? "Czynny VAT miesięczny" : "Zwolnienie z VAT")</strong>
+                        <span>od @period.ValidFromMonth.ToString("MM.yyyy", culture)</span>
+                    </li>
+                }
+            </ul>
+            <form method="post" asp-page-handler="Vat" class="compact-form">
+                <label asp-for="Vat.ValidFromMonth"></label>
+                <input asp-for="Vat.ValidFromMonth" type="date" class="form-control" />
+                <span asp-validation-for="Vat.ValidFromMonth" class="text-danger"></span>
+                <label asp-for="Vat.Profile"></label>
+                <select asp-for="Vat.Profile" class="form-select">
+                    <option value="ActiveMonthly">Czynny VAT miesięczny</option>
+                    <option value="VatExempt">Zwolnienie z VAT</option>
+                </select>
+                <button type="submit" class="btn btn-outline-primary">Dodaj nowy okres</button>
+            </form>
+        </section>
+
+        <section class="form-section" id="zus">
+            <h2>ZUS</h2>
+            <ul class="period-list">
+                @foreach (var period in Model.Profile.ZusProfiles)
+                {
+                    <li>
+                        <strong>@(period.Profile == ZusProfile.HealthOnlyDueToEmployment ? "Tylko składka zdrowotna z uwagi na etat" : "Składki społeczne i zdrowotna")</strong>
+                        <span>od @period.ValidFromMonth.ToString("MM.yyyy", culture)</span>
+                    </li>
+                }
+            </ul>
+            <form method="post" asp-page-handler="Zus" class="compact-form">
+                <label asp-for="Zus.ValidFromMonth"></label>
+                <input asp-for="Zus.ValidFromMonth" type="date" class="form-control" />
+                <span asp-validation-for="Zus.ValidFromMonth" class="text-danger"></span>
+                <label asp-for="Zus.Profile"></label>
+                <select asp-for="Zus.Profile" class="form-select">
+                    <option value="HealthOnlyDueToEmployment">Tylko składka zdrowotna z uwagi na etat</option>
+                    <option value="SocialAndHealthContributions">Składki społeczne i zdrowotna</option>
+                </select>
+                <button type="submit" class="btn btn-outline-primary">Dodaj nowy okres</button>
+            </form>
+        </section>
+
+        <section class="form-section">
+            <h2>Samochód</h2>
+            <ul class="period-list">
+                @foreach (var period in Model.Profile.VehicleProfiles)
+                {
+                    <li>
+                        <strong>@(period.Arrangement switch
+                        {
+                            VehicleArrangement.LongTermRental => "Najem długoterminowy",
+                            VehicleArrangement.Leasing => "Leasing",
+                            _ => "Brak samochodu w działalności",
+                        })</strong>
+                        <span>od @period.ValidFromMonth.ToString("MM.yyyy", culture)</span>
+                    </li>
+                }
+            </ul>
+            <form method="post" asp-page-handler="Vehicle" class="compact-form">
+                <label asp-for="Vehicle.ValidFromMonth"></label>
+                <input asp-for="Vehicle.ValidFromMonth" type="date" class="form-control" />
+                <span asp-validation-for="Vehicle.ValidFromMonth" class="text-danger"></span>
+                <label asp-for="Vehicle.Arrangement"></label>
+                <select asp-for="Vehicle.Arrangement" class="form-select">
+                    <option value="None">Brak</option>
+                    <option value="LongTermRental">Najem długoterminowy</option>
+                    <option value="Leasing">Leasing</option>
+                </select>
+                <button type="submit" class="btn btn-outline-primary">Dodaj nowy okres</button>
+            </form>
+        </section>
+
+        <section class="form-section">
+            <h2>Bezpieczeństwo</h2>
+            <p>Kontroluj urządzenia, na których pomijasz kod jednorazowy.</p>
+            <a class="btn btn-outline-secondary" asp-page="/Settings/Devices">Zaufane urządzenia</a>
+        </section>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

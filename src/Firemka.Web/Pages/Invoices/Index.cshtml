@@ -1,0 +1,23 @@
+@page
+@{
+    ViewData["Title"] = "Faktury";
+}
+
+<div class="page-intro">
+    <div class="eyebrow">Dokumenty</div>
+    <h1>Faktury</h1>
+    <p>Dodawaj dokumenty kosztowe, porównuj źródło z rozpoznanymi danymi i świadomie je potwierdzaj.</p>
+</div>
+
+<div class="dashboard-grid">
+    <a asp-page="/Invoices/Incoming/Index" class="dashboard-card text-decoration-none text-dark">
+        <span class="card-label">Koszty</span>
+        <strong class="card-value">Dokumenty przychodzące</strong>
+        <small>PDF, zdjęcia, OCR i KSeF testowy</small>
+    </a>
+    <a asp-page="/Invoices/Sales/Index" class="dashboard-card text-decoration-none text-dark">
+        <span class="card-label">Sprzedaż</span>
+        <strong class="card-value">Faktury sprzedaży</strong>
+        <small>Wersje robocze abonamentu i kontrolowana wysyłka do KSeF</small>
+    </a>
+</div>

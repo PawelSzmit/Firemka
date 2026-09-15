@@ -1,0 +1,157 @@
+@page
+@model Firemka.Web.Pages.Settlements.FilingsModel
+@using Firemka.Application.Time
+@using Firemka.Domain.Filings
+@{
+    ViewData["Title"] = "Pliki US i ZUS";
+    string Label(FilingArtifactKind kind) => kind switch
+    {
+        FilingArtifactKind.JpkV7M3 => "JPK_V7M(3)",
+        FilingArtifactKind.JpkPkpir3 => "JPK_PKPIR(3) narastająco",
+        FilingArtifactKind.ZusDraKedu227 => "ZUS DRA — KEDU 2.27",
+        _ => kind.ToString(),
+    };
+    string Status(FilingArtifactStatus status) => status switch
+    {
+        FilingArtifactStatus.ApprovalRequired => "Wymaga zatwierdzenia",
+        FilingArtifactStatus.Approved => "Zatwierdzony do pobrania",
+        FilingArtifactStatus.Sent => "Oznaczony jako wysłany",
+        FilingArtifactStatus.Accepted => "Przyjęty",
+        FilingArtifactStatus.Rejected => "Odrzucony",
+        _ => status.ToString(),
+    };
+    string Moment(DateTimeOffset value) =>
+        PolishBusinessTime.ToWarsawTime(value).ToString("dd.MM.yyyy HH:mm");
+}
+
+<header class="page-intro">
+    <p class="eyebrow">Rozliczenia · @Model.Workspace.Month.ToString("MM.yyyy")</p>
+    <h1>Pliki do ręcznej wysyłki</h1>
+    <p>Firemka przygotowuje i sprawdza pliki, ale nie łączy się z urzędem skarbowym ani ZUS.</p>
+</header>
+
+@if (Model.StatusMessage is not null)
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+<firemka-validation-summary summary="All" class="text-danger" role="alert" />
+
+<section class="form-section">
+    <h2>1. Przygotowanie</h2>
+    @if (Model.Workspace.Profile is null)
+    {
+        <div class="alert alert-warning">Najpierw zapisz potwierdzone dane urzędowe.</div>
+        <a asp-page="/Settings/Filings" class="btn btn-primary">Uzupełnij dane urzędowe</a>
+    }
+    else if (!Model.Workspace.HasClosedSettlement)
+    {
+        <div class="alert alert-warning">Najpierw zamknij wybraną wersję miesiąca.</div>
+        <a asp-page="/Settlements/Month" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth" class="btn btn-primary">Przejdź do zamknięcia</a>
+    }
+    else
+    {
+        <p>Źródłem będzie najnowsza zamknięta wersja miesiąca. Ponowienie nie utworzy duplikatów.</p>
+        <form method="post" asp-page-handler="Generate" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth">
+            <button type="submit" class="btn btn-primary" data-testid="generate-filings">Przygotuj lub odtwórz listę plików</button>
+        </form>
+    }
+</section>
+
+@foreach (var artifact in Model.Workspace.Artifacts)
+{
+    <section class="form-section filing-card" data-testid="filing-@artifact.Kind">
+        <p class="eyebrow">Wersja @artifact.VersionNumber</p>
+        <h2>@Label(artifact.Kind)</h2>
+        <p><strong>@Status(artifact.Status)</strong></p>
+        <dl class="history-values">
+            <div><dt>Schemat</dt><dd>@artifact.SchemaVersion</dd></div>
+            <div><dt>Utworzono</dt><dd>@Moment(artifact.CreatedAtUtc)</dd></div>
+            <div><dt>Kontrola pliku</dt><dd>SHA-256: @artifact.FileSha256[..12]…</dd></div>
+            @if (artifact.ApprovedAtUtc is DateTimeOffset approvedAt)
+            {
+                <div><dt>Zatwierdzono</dt><dd>@Moment(approvedAt)<br /><small>@artifact.ApprovalEvidence</small></dd></div>
+            }
+            @if (artifact.SentAtUtc is DateTimeOffset sentAt)
+            {
+                <div><dt>Wysłano ręcznie</dt><dd>@Moment(sentAt)<br /><small>@artifact.ManualSubmissionReference</small></dd></div>
+            }
+            @if (artifact.OutcomeAtUtc is DateTimeOffset outcomeAt)
+            {
+                <div><dt>Wynik zapisano</dt><dd>@Moment(outcomeAt)<br /><small>@artifact.OutcomeReference</small></dd></div>
+            }
+        </dl>
+        @if (artifact.PreviousArtifactId is not null)
+        {
+            <p>To korekta. Poprzednia wersja pozostaje w historii poniżej.</p>
+        }
+
+        @if (artifact.Status == FilingArtifactStatus.ApprovalRequired)
+        {
+            <form method="post" asp-page-handler="Approve" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth" class="compact-form">
+                <input type="hidden" name="Action.ArtifactId" value="@artifact.Id" />
+                <label for="approve-@artifact.Id">Co zostało porównane z zamknięciem miesiąca?</label>
+                <textarea id="approve-@artifact.Id" name="Action.Reference" class="form-control" rows="2" required></textarea>
+                <button type="submit" class="btn btn-primary">Zatwierdź tę wersję</button>
+            </form>
+        }
+        else
+        {
+            <form method="post" asp-page-handler="Export" asp-route-artifactId="@artifact.Id" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth">
+                <button type="submit" class="btn btn-outline-primary">Pobierz tę wersję</button>
+            </form>
+        }
+
+        @if (artifact.Status == FilingArtifactStatus.Approved && artifact.Kind != FilingArtifactKind.JpkPkpir3)
+        {
+            <details>
+                <summary>Plik został wysłany ręcznie</summary>
+                <form method="post" asp-page-handler="Sent" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth" class="compact-form">
+                    <input type="hidden" name="Action.ArtifactId" value="@artifact.Id" />
+                    <label for="sent-@artifact.Id">Gdzie i kiedy wysłano?</label>
+                    <textarea id="sent-@artifact.Id" name="Action.Reference" class="form-control" rows="2" required></textarea>
+                    <button type="submit" class="btn btn-warning">Oznacz jako wysłany ręcznie</button>
+                </form>
+            </details>
+        }
+        @if (artifact.Kind == FilingArtifactKind.JpkPkpir3 && artifact.Status == FilingArtifactStatus.Approved)
+        {
+            <div class="alert alert-info">Ten plik jest podglądem narastającym. Wysyłka będzie dostępna dopiero po zamknięciu roku.</div>
+        }
+        @if (artifact.Status == FilingArtifactStatus.Sent)
+        {
+            <form method="post" asp-page-handler="Outcome" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth" enctype="multipart/form-data" class="compact-form">
+                <input type="hidden" name="Outcome.ArtifactId" value="@artifact.Id" />
+                <label for="result-@artifact.Id">Wynik</label>
+                <select id="result-@artifact.Id" name="Outcome.Result" class="form-select">
+                    <option value="Accepted">Przyjęty</option>
+                    <option value="Rejected">Odrzucony</option>
+                </select>
+                <label for="receipt-@artifact.Id">UPO lub potwierdzenie</label>
+                <input id="receipt-@artifact.Id" name="Outcome.Receipt" type="file" class="form-control" accept=".xml,.pdf,.png,.jpg,.jpeg" required />
+                <label for="outcome-reference-@artifact.Id">Numer UPO albo opis odrzucenia</label>
+                <textarea id="outcome-reference-@artifact.Id" name="Outcome.Reference" class="form-control" rows="2" required></textarea>
+                <button type="submit" class="btn btn-primary">Zapisz wynik przy tej wersji</button>
+            </form>
+        }
+        @if (artifact.ReceiptFileId is Guid receiptId)
+        {
+            <a href="/Files/@receiptId" target="_blank" rel="noopener">Otwórz zapisane potwierdzenie</a>
+        }
+    </section>
+}
+
+<section class="form-section">
+    <h2>Instrukcja ręczna</h2>
+    <ol>
+        <li>Porównaj wartości pliku z zamknięciem miesiąca i zatwierdź konkretną wersję.</li>
+        <li>Pobierz plik. JPK otwórz w aktualnym Kliencie JPK WEB, a KEDU w aktualnym Płatniku lub ePłatniku.</li>
+        <li>Po samodzielnej wysyłce wróć tutaj i zapisz miejsce oraz czas wysyłki.</li>
+        <li>Dodaj UPO albo komunikat odrzucenia. Nie przypinaj potwierdzenia do innej wersji.</li>
+    </ol>
+    <div class="alert alert-warning">Pierwszy realny import każdego rodzaju pliku musi zostać sprawdzony ręcznie w aktualnym narzędziu urzędowym.</div>
+</section>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

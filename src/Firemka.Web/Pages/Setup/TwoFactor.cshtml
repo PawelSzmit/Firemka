@@ -1,0 +1,42 @@
+@page
+@model Firemka.Web.Pages.Setup.TwoFactorModel
+@{
+    ViewData["Title"] = "Ustaw TOTP";
+}
+
+<div class="auth-card">
+    <h1>Ustaw aplikację uwierzytelniającą</h1>
+    <p>W aplikacji takiej jak Microsoft Authenticator, Google Authenticator lub 1Password zeskanuj poniższy kod QR. Następnie wpisz wygenerowany kod.</p>
+
+    <div class="mb-3 text-center">
+        <img src="@Model.AuthenticatorQrCodeDataUri"
+             alt="Kod QR do dodania konta Firemka w aplikacji uwierzytelniającej"
+             width="240"
+             height="240"
+             class="img-fluid border rounded" />
+    </div>
+
+    <div class="alert alert-secondary">
+        <p class="mb-2">Jeśli nie możesz zeskanować kodu QR, dodaj konto ręcznie:</p>
+        <strong>Klucz konfiguracji:</strong><br />
+        <code class="user-select-all">@Model.SharedKey</code>
+    </div>
+    <details class="mb-3">
+        <summary>Adres do dodania konta w aplikacji</summary>
+        <code class="small user-select-all">@Model.AuthenticatorUri</code>
+    </details>
+
+    <form method="post">
+        <firemka-validation-summary summary="ModelOnly" class="text-danger" role="alert" />
+        <div class="mb-3">
+            <label asp-for="Input.Code" class="form-label"></label>
+            <input asp-for="Input.Code" class="form-control" autocomplete="one-time-code" inputmode="numeric" />
+            <span asp-validation-for="Input.Code" class="text-danger"></span>
+        </div>
+        <button type="submit" class="btn btn-primary">Potwierdź i zakończ</button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

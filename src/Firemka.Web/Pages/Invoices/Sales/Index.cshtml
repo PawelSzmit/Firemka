@@ -1,0 +1,100 @@
+@page
+@model Firemka.Web.Pages.Invoices.Sales.IndexModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Faktury sprzedaży";
+    var culture = (CultureInfo)CultureInfo.GetCultureInfo("pl-PL").Clone();
+    culture.NumberFormat.NumberGroupSeparator = " ";
+}
+
+<div class="page-intro">
+    <div class="eyebrow">Sprzedaż</div>
+    <h1>Faktury abonamentowe</h1>
+    <p>Każdy miesiąc ma osobną wersję roboczą. Okres usługi nie zmienia się, nawet gdy zatwierdzisz fakturę później.</p>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+<firemka-validation-summary summary="ModelOnly" class="alert alert-danger" role="alert" />
+
+@if (!Model.IsKsefEnabled)
+{
+    <section class="notice-card mb-3">
+        <h2>Wysyłka do KSeF jest wyłączona</h2>
+        <p>Możesz bezpiecznie przygotować i poprawiać wersje robocze. Przycisk wysyłki pozostaje nieaktywny do zakończenia testu KSeF.</p>
+    </section>
+}
+
+<div class="sales-toolbar">
+    <form method="post" asp-page-handler="Prepare">
+        <button type="submit" class="btn btn-primary">Przygotuj wersję roboczą na ten miesiąc</button>
+    </form>
+</div>
+
+@if (Model.Invoices.Count == 0)
+{
+    <section class="empty-state">
+        <h2>Nie ma jeszcze wersji roboczej</h2>
+        <p>Worker utworzy ją pierwszego dnia miesiąca. Możesz też przygotować ją teraz przyciskiem powyżej.</p>
+    </section>
+}
+else
+{
+    <div class="sales-list">
+        @foreach (var invoice in Model.Invoices)
+        {
+            <a asp-page="Details" asp-route-id="@invoice.Id" class="dashboard-card text-decoration-none text-dark">
+                <span class="card-label">@invoice.ServiceMonth.ToString("MM.yyyy") · @StatusLabel(invoice.Status)</span>
+                <strong class="card-value">@invoice.GrossAmount.ToString("N2", culture) @invoice.Currency</strong>
+                <small>Pełny miesiąc: @invoice.ServicePeriodFrom.ToString("dd.MM.yyyy")–@invoice.ServicePeriodTo.ToString("dd.MM.yyyy")</small>
+                @if (invoice.HasManualAmountOverride)
+                {
+                    <small>Kwota tej wersji została zmieniona ręcznie.</small>
+                }
+                @if (invoice.HasPendingSubscriptionRate)
+                {
+                    <small class="text-warning-emphasis">Nowa stawka czeka na Twoją decyzję.</small>
+                }
+            </a>
+        }
+    </div>
+}
+
+<section class="form-section mt-3">
+    <h2>Automatyczne wystawianie</h2>
+    <p>Domyślnie jest wyłączone i aplikacja nigdy nie włączy go sama. Właściciel może zrobić to dopiero po świadomym potwierdzeniu ostrzeżenia i odblokowaniu funkcji przez operatora.</p>
+    <p><strong>Stan:</strong> @(Model.Automation.Enabled ? "włączone" : "wyłączone")</p>
+    @if (!Model.Automation.Enabled)
+    {
+        <form method="post" asp-page-handler="Automation" class="compact-form">
+            <input type="hidden" name="enabled" value="true" />
+            <div class="form-check">
+                <input asp-for="AutomationWarningAcknowledged" class="form-check-input" disabled="@(!Model.Automation.CanBeEnabled)" />
+                <label asp-for="AutomationWarningAcknowledged" class="form-check-label">Rozumiem, że dokument zostanie wysłany bez dodatkowego kliknięcia.</label>
+            </div>
+            <button type="submit" class="btn btn-outline-danger" disabled="@(!Model.Automation.CanBeEnabled)">Włącz automatyzację</button>
+        </form>
+    }
+    else
+    {
+        <form method="post" asp-page-handler="Automation">
+            <input type="hidden" name="enabled" value="false" />
+            <button type="submit" class="btn btn-outline-secondary">Wyłącz automatyzację</button>
+        </form>
+    }
+</section>
+
+@functions {
+    private static string StatusLabel(Firemka.Domain.Sales.SalesInvoiceStatus status) => status switch
+    {
+        Firemka.Domain.Sales.SalesInvoiceStatus.Draft => "wersja robocza",
+        Firemka.Domain.Sales.SalesInvoiceStatus.Sending => "oczekuje na KSeF",
+        Firemka.Domain.Sales.SalesInvoiceStatus.DeliveryUncertain => "status do sprawdzenia",
+        Firemka.Domain.Sales.SalesInvoiceStatus.Rejected => "odrzucona",
+        Firemka.Domain.Sales.SalesInvoiceStatus.Issued => "wystawiona",
+        Firemka.Domain.Sales.SalesInvoiceStatus.IssuedContentMismatch => "wystawiona — różnica treści",
+        _ => "nieznany stan",
+    };
+}

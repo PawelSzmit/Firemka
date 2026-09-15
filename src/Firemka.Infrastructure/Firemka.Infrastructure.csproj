@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="PDFsharp-MigraDoc" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Firemka.Application/Firemka.Application.csproj" />
+    <ProjectReference Include="../Firemka.Domain/Firemka.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="../../docs/research/contracts/fa3-2026-09-09.xsd"
+                      Link="Ksef/Outgoing/Schemas/fa3-2026-09-09.xsd"
+                      LogicalName="Firemka.Ksef.Schemas.fa3-2026-09-09.xsd" />
+    <EmbeddedResource Include="../../docs/research/contracts/dependencies/*.xsd"
+                      Link="Ksef/Outgoing/Schemas/dependencies/%(Filename)%(Extension)"
+                      LogicalName="Firemka.Ksef.Schemas.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../docs/research/contracts/jpk-v7m3-2026-09-09.xsd"
+                      Link="Filings/Schemas/jpk-v7m3-2026-09-09.xsd"
+                      LogicalName="Firemka.Filings.Schemas.jpk-v7m3-2026-09-09.xsd" />
+    <EmbeddedResource Include="../../docs/research/contracts/jpk-pkpir3-2026-09-09.xsd"
+                      Link="Filings/Schemas/jpk-pkpir3-2026-09-09.xsd"
+                      LogicalName="Firemka.Filings.Schemas.jpk-pkpir3-2026-09-09.xsd" />
+    <EmbeddedResource Include="../../docs/research/contracts/kedu-2.27-2026-09-09.xsd"
+                      Link="Filings/Schemas/kedu-2.27-2026-09-09.xsd"
+                      LogicalName="Firemka.Filings.Schemas.kedu-2.27-2026-09-09.xsd" />
+  </ItemGroup>
+
+</Project>

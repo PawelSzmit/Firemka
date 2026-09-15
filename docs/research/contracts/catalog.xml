@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Local resolution for the exact external imports declared by the frozen XSD
+  snapshots in this directory.  The source XSD files remain unmodified.
+-->
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+  <uri name="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/StrukturyDanych_v10-0E.xsd" uri="dependencies/StrukturyDanych_v10-0E.xsd"/>
+  <uri name="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/KodyUrzedowSkarbowych/KodyUrzedowSkarbowych_v8-0E.xsd" uri="dependencies/KodyUrzedowSkarbowych_v8-0E.xsd"/>
+  <uri name="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2023/09/06/eD/KodyKrajow/KodyKrajow_v13-0E.xsd" uri="dependencies/KodyKrajow_v13-0E.xsd"/>
+  <uri name="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/StrukturyDanych_v12-0E.xsd" uri="dependencies/StrukturyDanych_v12-0E.xsd"/>
+  <uri name="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/ElementarneTypyDanych_v10-0E.xsd" uri="dependencies/ElementarneTypyDanych_v10-0E.xsd"/>
+  <uri name="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/KodyKrajow_v10-0E.xsd" uri="dependencies/KodyKrajow_v10-0E.xsd"/>
+  <uri name="http://www.w3.org/TR/xmldsig-core/xmldsig-core-schema.xsd" uri="dependencies/xmldsig-core-schema.xsd"/>
+</catalog>

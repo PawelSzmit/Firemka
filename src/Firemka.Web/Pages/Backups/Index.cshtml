@@ -1,0 +1,88 @@
+@page "/Backups"
+@model Firemka.Web.Pages.Backups.IndexModel
+@using Firemka.Application.Time
+@{
+    ViewData["Title"] = "Kopie zapasowe";
+}
+
+<header class="page-intro">
+    <div>
+        <p class="eyebrow">Kopie zapasowe</p>
+        <h1>Kopia poza serwerem, na Twoim Macu</h1>
+        <p>Klient Mac pobiera pełną kopię, szyfruje ją lokalnie i dopiero po sprawdzeniu oznacza jako poprawną.</p>
+    </div>
+</header>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.NewToken))
+{
+    <section class="notice-card" role="alert" data-testid="new-backup-token">
+        <h2>Skopiuj token teraz — nie pokażemy go ponownie</h2>
+        <p>Wklej go wyłącznie do Pęku kluczy macOS jako sekret klienta kopii. Wygenerowanie nowego tokenu unieważnia poprzedni.</p>
+        <textarea class="form-control" rows="3" readonly>@Model.NewToken</textarea>
+    </section>
+}
+
+<section class="form-section">
+    <h2>Stan</h2>
+    @if (!Model.Overview.IsConfigured)
+    {
+        <p>Klient Mac nie jest jeszcze skonfigurowany.</p>
+    }
+    else if (Model.Overview.IsOverdue)
+    {
+        <p class="text-danger"><strong>Kopia jest zaległa.</strong> Uruchom Maca i sprawdź klienta Firemki.</p>
+    }
+    else if (Model.Overview.LastSuccessfulAtUtc is { } success)
+    {
+        <p>Ostatnia sprawdzona kopia: <strong>@PolishBusinessTime.ToWarsawTime(success).ToString("dd.MM.yyyy HH:mm")</strong></p>
+        <p>Plik: @Model.Overview.LastFileName</p>
+    }
+    else
+    {
+        <p>Token jest aktywny. Oczekujemy na pierwszą sprawdzoną kopię.</p>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.Overview.LastFailureCode))
+    {
+        <p class="text-danger">Ostatnia próba nie powiodła się: @Model.Overview.LastFailureCode</p>
+    }
+    @if (Model.Overview.PendingAnnualYears.Count > 0)
+    {
+        <p>Oczekujące archiwa roczne: @string.Join(", ", Model.Overview.PendingAnnualYears)</p>
+    }
+    @if (Model.Overview.PendingManualRequests > 0)
+    {
+        <p><strong>Kopia na żądanie oczekuje na uruchomienie klienta Mac.</strong></p>
+    }
+</section>
+
+<section class="form-section">
+    <h2>Token klienta Mac</h2>
+    @if (Model.Overview.IsConfigured)
+    {
+        <p>Aktywny token: @Model.Overview.ActiveTokenPrefix…</p>
+        <form method="post" asp-page-handler="RevokeToken">
+            <button class="btn btn-outline-danger" type="submit">Unieważnij token</button>
+        </form>
+    }
+    <form method="post" asp-page-handler="GenerateToken" class="mt-3">
+        <button class="btn btn-primary" type="submit">@(Model.Overview.IsConfigured ? "Wygeneruj nowy token" : "Wygeneruj token")</button>
+    </form>
+</section>
+
+<section class="form-section">
+    <h2>Kopia na żądanie</h2>
+    <p>Żądanie nie zapisuje kopii na VPS. Klient Mac odbierze je po HTTPS, zaszyfruje i zweryfikuje lokalnie.</p>
+    <form method="post" asp-page-handler="RequestNow">
+        <button class="btn btn-primary" type="submit" disabled="@(!Model.Overview.IsConfigured)">Utwórz kopię teraz</button>
+    </form>
+</section>
+
+<section class="notice-card">
+    <h2>Ważne przed produkcją</h2>
+    <p>Hasło odzyskiwania musi być zapisane także poza Makiem, np. w menedżerze haseł lub bezpiecznej kopii offline. Utrata jedynego hasła oznacza brak możliwości odczytania kopii.</p>
+</section>

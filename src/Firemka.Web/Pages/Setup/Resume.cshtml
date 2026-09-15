@@ -1,0 +1,29 @@
+@page
+@model Firemka.Web.Pages.Setup.ResumeModel
+@{
+    ViewData["Title"] = "Dokończ konfigurację";
+}
+
+<div class="auth-card">
+    <h1>Dokończ konfigurację</h1>
+    <p>Konto właściciela już utworzono, ale TOTP nie został jeszcze potwierdzony. Zaloguj się, aby bezpiecznie wrócić do konfiguracji.</p>
+
+    <form method="post">
+        <firemka-validation-summary summary="ModelOnly" class="text-danger" role="alert" />
+        <div class="mb-3">
+            <label asp-for="Input.Email" class="form-label"></label>
+            <input asp-for="Input.Email" class="form-control" autocomplete="username" />
+            <span asp-validation-for="Input.Email" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.Password" class="form-label"></label>
+            <input asp-for="Input.Password" class="form-control" autocomplete="current-password" />
+            <span asp-validation-for="Input.Password" class="text-danger"></span>
+        </div>
+        <button type="submit" class="btn btn-primary">Dokończ TOTP</button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <UserSecretsId>firemka-web-development</UserSecretsId>
+    <UseRazorSourceGenerator>false</UseRazorSourceGenerator>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" />
+    <PackageReference Include="QRCoder" />
+    <ProjectReference Include="../Firemka.Application/Firemka.Application.csproj" />
+    <ProjectReference Include="../Firemka.Infrastructure/Firemka.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

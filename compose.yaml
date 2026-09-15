@@ -1,0 +1,132 @@
+name: firemka
+
+services:
+  postgres:
+    image: ${FIREMKA_POSTGRES_IMAGE:-firemka-postgres:local}
+    build:
+      context: .
+      dockerfile: deploy/Postgres.Dockerfile
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    volumes:
+      - postgres-data:/var/lib/postgresql
+
+  migrations:
+    image: ${FIREMKA_WEB_IMAGE:-firemka-web:local}
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: web
+    command: ["--migrate"]
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Firemka: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      DataProtection__KeyRingPath: /var/lib/firemka/keys
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - data-protection-keys:/var/lib/firemka/keys
+    restart: "no"
+
+  web:
+    image: ${FIREMKA_WEB_IMAGE:-firemka-web:local}
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: web
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Firemka: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      PrivateFileStore__RootPath: /var/lib/firemka/files
+      DataProtection__KeyRingPath: /var/lib/firemka/keys
+      Ksef__Incoming__Enabled: ${KSEF_INCOMING_ENABLED:-false}
+      Ksef__Incoming__Environment: ${KSEF_ENVIRONMENT:-Test}
+      Ksef__Incoming__AllowProduction: ${KSEF_ALLOW_PRODUCTION:-false}
+      Ksef__Incoming__AccessToken: ${KSEF_ACCESS_TOKEN:-}
+      Ksef__Outgoing__Enabled: ${KSEF_OUTGOING_ENABLED:-false}
+      Ksef__Outgoing__Environment: ${KSEF_ENVIRONMENT:-Test}
+      Ksef__Outgoing__AllowProduction: ${KSEF_OUTGOING_ALLOW_PRODUCTION:-false}
+      Ksef__Outgoing__AllowAutomation: ${KSEF_OUTGOING_ALLOW_AUTOMATION:-false}
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:8080/health > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    volumes:
+      - data-protection-keys:/var/lib/firemka/keys
+      - private-files:/var/lib/firemka/files
+    restart: unless-stopped
+
+  worker:
+    image: ${FIREMKA_WORKER_IMAGE:-firemka-worker:local}
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: worker
+    environment:
+      DOTNET_ENVIRONMENT: Production
+      ConnectionStrings__Firemka: Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      PrivateFileStore__RootPath: /var/lib/firemka/files
+      Ksef__Incoming__Enabled: ${KSEF_INCOMING_ENABLED:-false}
+      Ksef__Incoming__Environment: ${KSEF_ENVIRONMENT:-Test}
+      Ksef__Incoming__AllowProduction: ${KSEF_ALLOW_PRODUCTION:-false}
+      Ksef__Incoming__AccessToken: ${KSEF_ACCESS_TOKEN:-}
+      Ksef__Outgoing__Enabled: ${KSEF_OUTGOING_ENABLED:-false}
+      Ksef__Outgoing__Environment: ${KSEF_ENVIRONMENT:-Test}
+      Ksef__Outgoing__AllowProduction: ${KSEF_OUTGOING_ALLOW_PRODUCTION:-false}
+      Ksef__Outgoing__AllowAutomation: ${KSEF_OUTGOING_ALLOW_AUTOMATION:-false}
+      Email__Enabled: ${EMAIL_ENABLED:-false}
+      Email__Host: ${EMAIL_HOST:-}
+      Email__Port: ${EMAIL_PORT:-587}
+      Email__EnableSsl: ${EMAIL_ENABLE_SSL:-true}
+      Email__Username: ${EMAIL_USERNAME:-}
+      Email__Password: ${EMAIL_PASSWORD:-}
+      Email__From: ${EMAIL_FROM:-}
+      Email__Recipient: ${EMAIL_RECIPIENT:-pawel@sitback.pl}
+      Email__BaseUrl: https://${FIREMKA_DOMAIN}
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    volumes:
+      - private-files:/var/lib/firemka/files
+
+  caddy:
+    image: ${FIREMKA_CADDY_IMAGE:-firemka-caddy:local}
+    build:
+      context: .
+      dockerfile: deploy/Caddy.Dockerfile
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      CADDY_EMAIL: ${CADDY_EMAIL:?set CADDY_EMAIL in .env}
+      FIREMKA_DOMAIN: ${FIREMKA_DOMAIN:?set FIREMKA_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy-config:
+  caddy-data:
+  data-protection-keys:
+  postgres-data:
+  private-files:

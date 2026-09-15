@@ -1,0 +1,123 @@
+@page "/Payments"
+@model Firemka.Web.Pages.Payments.IndexModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Płatności";
+    var culture = CultureInfo.GetCultureInfo("pl-PL");
+    string Amount(decimal value) => $"{value.ToString("N2", culture)} zł";
+}
+
+<header class="page-intro">
+    <div>
+        <p class="eyebrow">Płatności</p>
+        <h1>@WorkspaceMonth() — @Model.Workspace.CompanyName</h1>
+        <p>Firemka zapisuje tylko pełne płatności. Nie wykonuje przelewów i nie obsługuje częściowych wpłat.</p>
+    </div>
+</header>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+<firemka-validation-summary />
+
+<section class="form-section">
+    <h2>Należności miesiąca</h2>
+    @if (Model.Workspace.Obligations.Count == 0)
+    {
+        <p>Brak dodatnich należności dla tego miesiąca. Podatki pojawią się po zamknięciu miesiąca, a faktura po wystawieniu.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Należność</th><th>Kwota</th><th>Termin</th><th>Stan lub działanie</th></tr></thead>
+                <tbody>
+                @foreach (var obligation in Model.Workspace.Obligations)
+                {
+                    <tr data-testid="payment-obligation-@obligation.Kind">
+                        <td>@obligation.Label <small class="d-block">wersja @obligation.TargetVersion</small></td>
+                        <td>@Amount(obligation.AmountDue)</td>
+                        <td>@obligation.DueOn.ToString("dd.MM.yyyy", culture)</td>
+                        <td>
+                            @if (obligation.Payment is { } paid)
+                            {
+                                <strong>Opłacona @paid.PaidOn.ToString("dd.MM.yyyy", culture)</strong>
+                                <small class="d-block">@paid.ExternalIdentifier</small>
+                            }
+                            else
+                            {
+                                <details>
+                                    <summary>Oznacz pełną płatność</summary>
+                                    <form method="post" asp-page-handler="Paid" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth" class="compact-form mt-2">
+                                        <input type="hidden" name="Payment.Kind" value="@obligation.Kind" />
+                                        <input type="hidden" name="Payment.TargetId" value="@obligation.TargetId" />
+                                        <input type="hidden" name="Payment.TargetVersion" value="@obligation.TargetVersion" />
+                                        <input type="hidden" name="Payment.AmountPaid" value="@obligation.AmountDue.ToString(CultureInfo.InvariantCulture)" />
+                                        <label for="paid-on-@obligation.Kind">Data pełnej płatności</label>
+                                        <input id="paid-on-@obligation.Kind" name="Payment.PaidOn" type="date" value="@Model.Payment.PaidOn?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)" class="form-control" required />
+                                        <label for="payment-reference-@obligation.Kind">Unikalna referencja przelewu</label>
+                                        <input id="payment-reference-@obligation.Kind" name="Payment.ExternalIdentifier" class="form-control" maxlength="500" required />
+                                        <button type="submit" class="btn btn-primary">Potwierdź pełną kwotę @Amount(obligation.AmountDue)</button>
+                                    </form>
+                                </details>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="form-section">
+    <h2>Historia zapisanych płatności</h2>
+    @if (Model.Workspace.PaymentHistory.Count == 0)
+    {
+        <p>Nie zapisano jeszcze żadnej płatności.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead><tr><th>Rodzaj</th><th>Kwota</th><th>Data</th><th>Referencja</th></tr></thead>
+                <tbody>
+                @foreach (var payment in Model.Workspace.PaymentHistory)
+                {
+                    <tr>
+                        <td>@PaymentLabel(payment.Kind) <small class="d-block">wersja @payment.TargetVersion</small></td>
+                        <td>@Amount(payment.AmountPaid)</td>
+                        <td>@payment.PaidOn.ToString("dd.MM.yyyy", culture)</td>
+                        <td>@payment.ExternalIdentifier</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="notice-card">
+    <h2>Dlaczego tylko pełna płatność?</h2>
+    <p>Płatności częściowe są poza pierwszą wersją. Kwota jest ponownie sprawdzana przez aplikację przy zapisie, więc zmiana ukrytego pola formularza nie zamknie należności inną kwotą.</p>
+</section>
+
+@functions
+{
+    private string WorkspaceMonth()
+    {
+        var culture = CultureInfo.GetCultureInfo("pl-PL");
+        var name = culture.DateTimeFormat.GetMonthName(Model.SelectedMonth);
+        return $"{char.ToUpper(name[0], culture)}{name[1..]} {Model.SelectedYear}";
+    }
+
+    private static string PaymentLabel(Firemka.Domain.Payments.PaymentKind kind) => kind switch
+    {
+        Firemka.Domain.Payments.PaymentKind.ClientInvoice => "Faktura klienta",
+        Firemka.Domain.Payments.PaymentKind.Pit => "PIT",
+        Firemka.Domain.Payments.PaymentKind.Vat => "VAT",
+        Firemka.Domain.Payments.PaymentKind.Zus => "ZUS",
+        _ => "Płatność",
+    };
+}

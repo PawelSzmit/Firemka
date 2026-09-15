@@ -1,0 +1,17 @@
+@page
+@model Firemka.Web.Pages.Setup.RecoveryCodesModel
+@{
+    ViewData["Title"] = "Kody odzyskiwania";
+}
+
+<div class="auth-card">
+    <h1>Zapisz kody odzyskiwania</h1>
+    <p>Każdy kod można wykorzystać tylko raz, gdy stracisz dostęp do aplikacji uwierzytelniającej. Zapisz je poza Firemką — po opuszczeniu tej strony nie pokażemy ich ponownie.</p>
+    <ul class="recovery-codes" aria-label="Kody odzyskiwania">
+        @foreach (var code in Model.Codes)
+        {
+            <li><code>@code</code></li>
+        }
+    </ul>
+    <a class="btn btn-primary" asp-page="/Index">Przejdź do Firemki</a>
+</div>

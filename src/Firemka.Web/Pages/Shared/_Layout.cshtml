@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Firemka</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Firemka.Web.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-page="/Index">Firemka</a>
+                <button class="navbar-toggler" type="button" data-navigation-toggle aria-controls="main-navigation"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div id="main-navigation" class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <ul class="navbar-nav flex-grow-1">
+                            <li class="nav-item"><a class="nav-link text-dark" asp-page="/Month/Index">Mój miesiąc</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-page="/Invoices/Index">Faktury</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-page="/Expenses/Index">Wydatki</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-page="/Books/Index">Księgi</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-page="/Settlements/Index">Rozliczenia</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-page="/Payments/Index">Płatności</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-page="/Backups/Index">Kopie</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-page="/Settings/Calculations">Zasady obliczeń</a></li>
+                            <li class="nav-item"><a class="nav-link text-dark" asp-page="/Settings/Index">Ustawienia</a></li>
+                        </ul>
+                        <form method="post" asp-page="/Account/Logout" class="d-flex">
+                            <button type="submit" class="btn btn-link nav-link text-dark">Wyloguj</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2026 - Firemka
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

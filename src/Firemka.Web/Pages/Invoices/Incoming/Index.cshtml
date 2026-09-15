@@ -1,0 +1,136 @@
+@page "/Invoices/Incoming"
+@model Firemka.Web.Pages.Invoices.Incoming.IndexModel
+@using Firemka.Domain.Documents
+@{
+    ViewData["Title"] = "Dokumenty przychodzące";
+}
+
+<div class="page-intro">
+    <div class="eyebrow">Faktury kosztowe</div>
+    <h1>Dokumenty przychodzące</h1>
+    <p>Dodaj fakturę lub zdjęcie. Dane rozpoznane automatycznie są tylko podpowiedzią — przed dalszym użyciem wymagają Twojego potwierdzenia.</p>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+
+<firemka-validation-summary summary="ModelOnly" class="text-danger" role="alert" />
+
+<div class="inbox-actions">
+    <section class="form-section">
+        <h2>Dodaj dokument</h2>
+        <form method="post" enctype="multipart/form-data" asp-page-handler="Upload" class="compact-form">
+            <label asp-for="Upload" class="form-label">PDF, JPEG lub PNG</label>
+            <input asp-for="Upload" class="form-control" accept="application/pdf,image/jpeg,image/png" />
+            <span asp-validation-for="Upload" class="text-danger"></span>
+            <small>Maksymalnie 20 MB. Aplikacja sprawdza także faktyczną zawartość pliku.</small>
+            <button type="submit" class="btn btn-primary">Dodaj dokument</button>
+        </form>
+    </section>
+
+    <section class="form-section">
+        <h2>KSeF przychodzący</h2>
+        @if (Model.IsKsefEnabled)
+        {
+            <p>Synchronizacja działa w środowisku wybranym w bezpiecznej konfiguracji serwera.</p>
+            <form method="post" asp-page-handler="SyncKsef">
+                <button type="submit" class="btn btn-outline-primary">Pobierz nowe faktury</button>
+            </form>
+        }
+        else
+        {
+            <p class="text-muted">Połączenie jest wyłączone do czasu bezpiecznego przekazania testowego dostępu KSeF.</p>
+            <button type="button" class="btn btn-outline-secondary" disabled>Połącz najpierw KSeF testowe</button>
+        }
+    </section>
+</div>
+
+<section class="form-section mt-3">
+    <h2>Lista dokumentów</h2>
+    <form method="get" class="compact-form inbox-filter">
+        <label asp-for="Status" class="form-label">Pokaż status</label>
+        <select asp-for="Status" class="form-select">
+            <option value="">Wszystkie</option>
+            <option value="Acquired">Oczekuje na OCR</option>
+            <option value="DataToReview">Dane do sprawdzenia</option>
+            <option value="RuleToDefine">Dane potwierdzone</option>
+            <option value="ErrorToResolve">Wymaga rozwiązania błędu</option>
+            <option value="UnrelatedToBusiness">Niezwiązany z firmą</option>
+            <option value="Booked">Zaksięgowany</option>
+        </select>
+        <button type="submit" class="btn btn-outline-secondary">Filtruj</button>
+    </form>
+    @if (Model.Documents.Items.Count == 0)
+    {
+        <p class="text-muted mb-0">Nie ma jeszcze żadnych dokumentów.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr><th>Dokument</th><th>Sprzedawca</th><th>Kwota</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody>
+                @foreach (var document in Model.Documents.Items)
+                {
+                    <tr>
+                        <td>@(document.InvoiceNumber ?? document.KsefNumber ?? "Plik do rozpoznania")</td>
+                        <td>@(document.SellerName ?? "—")</td>
+                        <td>@(document.GrossAmount is null ? "—" : $"{document.GrossAmount:N2} {document.Currency}")</td>
+                        <td>
+                            @StatusLabel(document.Status)
+                            @if (document.HasUnresolvedSourceConflict)
+                            {
+                                <span class="text-danger d-block">Konflikt źródła KSeF</span>
+                                @if (document.SourceConflictDetectedAtUtc is DateTimeOffset detectedAt)
+                                {
+                                    <small class="text-danger">@detectedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</small>
+                                }
+                            }
+                            else if (document.HasSourceConflict)
+                            {
+                                <span class="text-success d-block">Konflikt wyjaśniony</span>
+                            }
+                        </td>
+                        <td><a asp-page="Details" asp-route-id="@document.Id" class="btn btn-sm btn-outline-primary">Sprawdź</a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.Documents.TotalPages > 1)
+        {
+            <nav class="inbox-pagination" aria-label="Strony dokumentów">
+                @if (Model.Documents.PageNumber > 1)
+                {
+                    <a asp-page="Index" asp-route-pageNumber="@(Model.Documents.PageNumber - 1)" asp-route-status="@Model.Status" class="btn btn-sm btn-outline-secondary">← Poprzednia</a>
+                }
+                <span>Strona @Model.Documents.PageNumber z @Model.Documents.TotalPages</span>
+                @if (Model.Documents.PageNumber < Model.Documents.TotalPages)
+                {
+                    <a asp-page="Index" asp-route-pageNumber="@(Model.Documents.PageNumber + 1)" asp-route-status="@Model.Status" class="btn btn-sm btn-outline-secondary">Następna →</a>
+                }
+            </nav>
+        }
+    }
+</section>
+
+@functions {
+    private static string StatusLabel(SourceDocumentStatus status) => status switch
+    {
+        SourceDocumentStatus.Acquired => "Oczekuje na OCR",
+        SourceDocumentStatus.DataToReview => "Dane do sprawdzenia",
+        SourceDocumentStatus.RuleToDefine => "Dane potwierdzone",
+        SourceDocumentStatus.UnrelatedToBusiness => "Niezwiązany z firmą",
+        SourceDocumentStatus.ErrorToResolve => "Wymaga rozwiązania błędu",
+        SourceDocumentStatus.Booked => "Zaksięgowany",
+        _ => status.ToString(),
+    };
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

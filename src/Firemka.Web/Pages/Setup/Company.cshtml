@@ -1,0 +1,119 @@
+@page "/Setup/Company"
+@model Firemka.Web.Pages.Setup.CompanyModel
+@{
+    ViewData["Title"] = "Konfiguracja firmy";
+}
+
+<div class="setup-shell">
+    <header class="page-intro">
+        <p class="eyebrow">Pierwsze uruchomienie</p>
+        <h1>Skonfiguruj swoją firmę</h1>
+        <p>Te dane będą podstawą kolejnych miesięcy. Późniejsze zmiany zapiszą się jako nowe okresy i nie zmienią historii.</p>
+    </header>
+
+    <form method="post" class="setup-form">
+        <firemka-validation-summary summary="ModelOnly" class="text-danger" role="alert" />
+
+        <section class="form-section">
+            <h2>Firma</h2>
+            <div class="form-grid">
+                <div class="field field-wide">
+                    <label asp-for="Input.CompanyName" class="form-label"></label>
+                    <input asp-for="Input.CompanyName" class="form-control" autocomplete="organization" />
+                    <span asp-validation-for="Input.CompanyName" class="text-danger"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Input.CompanyNip" class="form-label"></label>
+                    <input asp-for="Input.CompanyNip" class="form-control" inputmode="numeric" autocomplete="off" />
+                    <span asp-validation-for="Input.CompanyNip" class="text-danger"></span>
+                </div>
+                <div class="field field-wide">
+                    <label asp-for="Input.CompanyAddress" class="form-label"></label>
+                    <input asp-for="Input.CompanyAddress" class="form-control" autocomplete="street-address" />
+                    <span asp-validation-for="Input.CompanyAddress" class="text-danger"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Input.BusinessStartDate" class="form-label"></label>
+                    <input asp-for="Input.BusinessStartDate" class="form-control" type="date" />
+                    <span asp-validation-for="Input.BusinessStartDate" class="text-danger"></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2>Stały klient</h2>
+            <div class="form-grid">
+                <div class="field field-wide">
+                    <label asp-for="Input.CounterpartyName" class="form-label"></label>
+                    <input asp-for="Input.CounterpartyName" class="form-control" />
+                    <span asp-validation-for="Input.CounterpartyName" class="text-danger"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Input.CounterpartyNip" class="form-label"></label>
+                    <input asp-for="Input.CounterpartyNip" class="form-control" inputmode="numeric" />
+                    <span asp-validation-for="Input.CounterpartyNip" class="text-danger"></span>
+                </div>
+                <div class="field field-wide">
+                    <label asp-for="Input.CounterpartyAddress" class="form-label"></label>
+                    <input asp-for="Input.CounterpartyAddress" class="form-control" />
+                    <span asp-validation-for="Input.CounterpartyAddress" class="text-danger"></span>
+                </div>
+                <div class="field field-wide">
+                    <label asp-for="Input.ServiceDescription" class="form-label"></label>
+                    <input asp-for="Input.ServiceDescription" class="form-control" />
+                    <span asp-validation-for="Input.ServiceDescription" class="text-danger"></span>
+                    <small>Ten tekst będzie później używany jako nazwa pozycji na fakturze abonamentowej.</small>
+                </div>
+            </div>
+        </section>
+
+        <section class="form-section">
+            <h2>Rozliczenia i koszty</h2>
+            <div class="fixed-choice" aria-label="Forma opodatkowania">
+                <span>Forma opodatkowania</span>
+                <strong>Skala podatkowa</strong>
+                <small>Jedyna forma obsługiwana w pierwszej wersji.</small>
+            </div>
+            <div class="fixed-choice">
+                <span>VAT</span>
+                <strong>Czynny podatnik, rozliczenie miesięczne</strong>
+            </div>
+            <div class="fixed-choice">
+                <span>ZUS</span>
+                <strong>Tylko składka zdrowotna z uwagi na etat</strong>
+            </div>
+            <div class="form-grid mt-3">
+                <div class="field">
+                    <label asp-for="Input.SubscriptionNetMonthlyAmount" class="form-label"></label>
+                    <input asp-for="Input.SubscriptionNetMonthlyAmount" class="form-control" inputmode="decimal" />
+                    <span asp-validation-for="Input.SubscriptionNetMonthlyAmount" class="text-danger"></span>
+                    <small>Abonament jest należny za cały miesiąc, również gdy działalność zaczyna się w jego trakcie.</small>
+                </div>
+                <div class="field">
+                    <label asp-for="Input.SubscriptionVatRate" class="form-label"></label>
+                    <input asp-for="Input.SubscriptionVatRate" class="form-control" inputmode="decimal" />
+                    <span asp-validation-for="Input.SubscriptionVatRate" class="text-danger"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Input.EnergyGrossPricePerKwh" class="form-label"></label>
+                    <input asp-for="Input.EnergyGrossPricePerKwh" class="form-control" inputmode="decimal" />
+                    <span asp-validation-for="Input.EnergyGrossPricePerKwh" class="text-danger"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Input.VehicleArrangement" class="form-label"></label>
+                    <select asp-for="Input.VehicleArrangement" class="form-select">
+                        <option value="None">Brak</option>
+                        <option value="LongTermRental">Najem długoterminowy</option>
+                        <option value="Leasing">Leasing</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <button type="submit" class="btn btn-primary btn-lg">Zapisz i przejdź do mojego miesiąca</button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

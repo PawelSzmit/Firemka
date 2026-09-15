@@ -1,0 +1,29 @@
+# System and editor files
+.DS_Store
+.idea/
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Build output and test artifacts
+**/bin/
+**/obj/
+TestResults/
+.playwright-cli/
+tmp/
+
+# Locally provisioned tools and package caches
+.tooling/
+.dotnet-cli/
+.nuget/
+
+# Local configuration and secrets
+.env
+!.env.example
+**/appsettings.Development.local.json
+**/secrets/
+data-protection-keys/
+
+# Local container state
+.docker-data/

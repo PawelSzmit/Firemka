@@ -1,0 +1,19 @@
+{
+	email {$CADDY_EMAIL}
+}
+
+{$FIREMKA_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	}
+
+	reverse_proxy web:8080
+
+	log {
+		output stdout
+		format json
+	}
+}

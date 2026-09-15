@@ -1,0 +1,156 @@
+@page "/Invoices/Sales/{id:guid}"
+@model Firemka.Web.Pages.Invoices.Sales.DetailsModel
+@using Firemka.Domain.Sales
+@using System.Globalization
+@{
+    ViewData["Title"] = "Wersja robocza faktury";
+    var invoice = Model.Details.Invoice;
+    var culture = (CultureInfo)CultureInfo.GetCultureInfo("pl-PL").Clone();
+    culture.NumberFormat.NumberGroupSeparator = " ";
+}
+
+<div class="page-intro">
+    <div class="eyebrow">Sprzedaż · @invoice.ServiceMonth.ToString("MM.yyyy")</div>
+    <h1>@(invoice.InvoiceNumber ?? "Wersja robocza faktury")</h1>
+    <p>Pełny miesiąc: @invoice.ServicePeriodFrom.ToString("dd.MM.yyyy")–@invoice.ServicePeriodTo.ToString("dd.MM.yyyy"). Data zatwierdzenia nie skraca okresu usługi.</p>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-info" role="status">@Model.StatusMessage</div>
+}
+<firemka-validation-summary summary="ModelOnly" class="alert alert-danger" role="alert" />
+
+@if (Model.Details.IsLateApproval)
+{
+    <section class="notice-card mb-3">
+        <h2>Faktura zatwierdzona po zakończeniu miesiąca usługi</h2>
+        <p>Zachowano pierwotny okres. Data wystawienia jest rzeczywistą datą zatwierdzenia, a termin płatności przypada siedem dni później.</p>
+    </section>
+}
+
+@if (invoice.Status == SalesInvoiceStatus.IssuedContentMismatch)
+{
+    <section class="alert alert-danger" role="alert">
+        <h2 class="h5">Zwrócona faktura różni się od wysłanej wersji</h2>
+        <p class="mb-0">Faktura ma numer KSeF i nie wolno jej wysyłać ponownie. Porównaj dokumenty i wyjaśnij różnicę przed dalszym rozliczeniem.</p>
+    </section>
+}
+
+@if (invoice.Status == SalesInvoiceStatus.Rejected)
+{
+    <section class="notice-card mb-3">
+        <h2>Popraw odrzuconą fakturę</h2>
+        <p>Odrzucona próba i odpowiedź KSeF pozostaną w historii. Po otwarciu korekty możesz zmienić kwotę lub VAT, a kolejna wysyłka otrzyma nowy identyfikator zabezpieczający przed duplikatem.</p>
+        <form method="post" asp-page-handler="ReopenRejected">
+            <button type="submit" class="btn btn-warning">Otwórz do poprawy</button>
+        </form>
+    </section>
+}
+
+@if (invoice.HasPendingSubscriptionRate)
+{
+    <section class="notice-card mb-3">
+        <h2>Nowa stawka różni się od ręcznie zmienionej kwoty</h2>
+        <p>Ta wersja ma @invoice.NetAmount.ToString("N2", culture) zł netto, a nowa stawka to @Model.Details.PendingSubscriptionNetAmount?.ToString("N2", culture) zł netto. Nic nie zostało zastąpione bez Twojej decyzji.</p>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+            <form method="post" asp-page-handler="RateDecision">
+                <input type="hidden" name="replaceManualAmount" value="false" />
+                <button type="submit" class="btn btn-outline-secondary">Zostaw ręczną kwotę</button>
+            </form>
+            <form method="post" asp-page-handler="RateDecision">
+                <input type="hidden" name="replaceManualAmount" value="true" />
+                <button type="submit" class="btn btn-warning">Zastosuj nową stawkę</button>
+            </form>
+        </div>
+    </section>
+}
+
+<div class="sales-details-grid">
+    <section class="form-section">
+        <h2>Kwoty</h2>
+        <dl class="sales-summary">
+            <div><dt>Netto</dt><dd>@invoice.NetAmount.ToString("N2", culture) zł</dd></div>
+            <div><dt>VAT</dt><dd>@invoice.VatAmount.ToString("N2", culture) zł (@Model.Details.VatRate.ToString("0.##", culture)%)</dd></div>
+            <div><dt>Brutto</dt><dd>@invoice.GrossAmount.ToString("N2", culture) zł</dd></div>
+            @if (invoice.IssueDate is not null)
+            {
+                <div><dt>Data wystawienia</dt><dd>@invoice.IssueDate.Value.ToString("dd.MM.yyyy")</dd></div>
+            }
+            @if (invoice.PaymentDueDate is not null)
+            {
+                <div><dt>Termin płatności</dt><dd>@invoice.PaymentDueDate.Value.ToString("dd.MM.yyyy")</dd></div>
+            }
+        </dl>
+    </section>
+
+    <section class="form-section">
+        <h2>Opis usługi</h2>
+        <p>@Model.Details.Description</p>
+        <p class="mb-0"><strong>Stan:</strong> @StatusLabel(invoice.Status)</p>
+        @if (!string.IsNullOrWhiteSpace(invoice.KsefNumber))
+        {
+            <p class="mb-0"><strong>Numer KSeF:</strong> @invoice.KsefNumber</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(invoice.RejectionReason))
+        {
+            <p class="text-danger mb-0"><strong>Powód odrzucenia:</strong> @invoice.RejectionReason</p>
+        }
+    </section>
+</div>
+
+@if (invoice.Status == SalesInvoiceStatus.Draft)
+{
+    <section class="form-section mt-3">
+        <h2>Zmień tylko tę wersję roboczą</h2>
+        <form method="post" asp-page-handler="Edit" class="form-grid">
+            <div class="field">
+                <label asp-for="Input.NetAmount" class="form-label"></label>
+                <input asp-for="Input.NetAmount" class="form-control" inputmode="decimal" />
+                <span asp-validation-for="Input.NetAmount" class="text-danger"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.VatRate" class="form-label"></label>
+                <input asp-for="Input.VatRate" class="form-control" inputmode="decimal" />
+                <span asp-validation-for="Input.VatRate" class="text-danger"></span>
+            </div>
+            <div class="field-wide">
+                <button type="submit" class="btn btn-outline-primary">Zapisz zmianę tej faktury</button>
+            </div>
+        </form>
+    </section>
+}
+
+<section class="form-section mt-3">
+    <h2>@(invoice.Status is SalesInvoiceStatus.Sending or SalesInvoiceStatus.DeliveryUncertain ? "Sprawdź status" : "Wystawienie")</h2>
+    @if (!Model.Details.OutgoingKsefEnabled)
+    {
+        <p>Wysyłka jest wyłączona do czasu zakończenia testu z KSeF. Wersja robocza pozostaje bezpiecznie zapisana.</p>
+    }
+    else if (invoice.Status == SalesInvoiceStatus.Draft)
+    {
+        <p>Po kliknięciu data wystawienia będzie dzisiejsza, termin płatności zostanie wyznaczony siedem dni później, a okres usługi pozostanie bez zmian.</p>
+    }
+    <form method="post" asp-page-handler="Issue">
+        <button type="submit"
+                class="btn btn-danger"
+                disabled="@(!Model.Details.OutgoingKsefEnabled || invoice.Status is SalesInvoiceStatus.Issued or SalesInvoiceStatus.IssuedContentMismatch or SalesInvoiceStatus.Rejected)">
+            @(invoice.Status is SalesInvoiceStatus.Sending or SalesInvoiceStatus.DeliveryUncertain ? "Sprawdź w KSeF bez ponownej wysyłki" : "Wystaw i wyślij do KSeF")
+        </button>
+    </form>
+</section>
+
+<p class="mt-3"><a asp-page="Index">← Wróć do faktur sprzedaży</a></p>
+
+@functions {
+    private static string StatusLabel(SalesInvoiceStatus status) => status switch
+    {
+        SalesInvoiceStatus.Draft => "wersja robocza",
+        SalesInvoiceStatus.Sending => "oczekuje na odpowiedź KSeF",
+        SalesInvoiceStatus.DeliveryUncertain => "wymaga sprawdzenia statusu",
+        SalesInvoiceStatus.Rejected => "odrzucona przez KSeF",
+        SalesInvoiceStatus.Issued => "wystawiona",
+        SalesInvoiceStatus.IssuedContentMismatch => "wystawiona — treść wymaga wyjaśnienia",
+        _ => "nieznany stan",
+    };
+}

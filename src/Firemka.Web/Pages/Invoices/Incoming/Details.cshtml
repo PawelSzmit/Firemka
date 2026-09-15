@@ -1,0 +1,214 @@
+@page "/Invoices/Incoming/{id:guid}"
+@model Firemka.Web.Pages.Invoices.Incoming.DetailsModel
+@using Firemka.Domain.Documents
+@{
+    ViewData["Title"] = "Sprawdź dokument";
+}
+
+<div class="page-intro">
+    <div class="eyebrow">Weryfikacja dokumentu</div>
+    <h1>Dokument obok danych</h1>
+    <p>Porównaj źródło z podpowiedziami. OCR nie zatwierdza dokumentu samodzielnie.</p>
+</div>
+
+@if (TempData["StatusMessage"] is string message)
+{
+    <div class="alert alert-success" role="status">@message</div>
+}
+
+@if (Model.Document.Summary.HasUnresolvedSourceConflict)
+{
+    <div class="alert alert-danger" role="alert">
+        KSeF zwrócił inną treść dla tego samego numeru. Zachowane źródło nie zostało nadpisane; dokument wymaga wyjaśnienia niezależnie od dotychczasowego statusu.
+        @if (Model.Document.Summary.SourceConflictDetectedAtUtc is DateTimeOffset detectedAt)
+        {
+            <span class="d-block">Wykryto: @detectedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+        }
+    </div>
+    <section class="form-section mb-3">
+        <h2>Wyjaśnij konflikt źródła</h2>
+        <p>Najpierw porównaj zachowany plik z danymi KSeF. Decyzja nie usuwa historii ani nie zastępuje źródła.</p>
+        <form method="post" asp-page-handler="ResolveConflict" class="compact-form">
+            <label asp-for="SourceConflictResolution" class="form-label">Wyjaśnienie decyzji</label>
+            <textarea asp-for="SourceConflictResolution" class="form-control" rows="3" maxlength="2000" placeholder="Opisz, co zostało porównane i dlaczego konflikt można zamknąć."></textarea>
+            <span asp-validation-for="SourceConflictResolution" class="text-danger"></span>
+            <button type="submit" class="btn btn-primary">Zapisz wyjaśnienie i zamknij konflikt</button>
+        </form>
+    </section>
+}
+else if (Model.Document.Summary.HasSourceConflict)
+{
+    <div class="alert alert-success" role="status">
+        <strong>Konflikt źródła został wyjaśniony.</strong> Historia wykrycia i zachowany plik nadal są dostępne.
+        @if (Model.Document.Summary.SourceConflictResolvedAtUtc is DateTimeOffset resolvedAt)
+        {
+            <span class="d-block">Wyjaśniono: @resolvedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Document.SourceConflictResolution))
+        {
+            <span class="d-block"><strong>Decyzja:</strong> @Model.Document.SourceConflictResolution</span>
+        }
+    </div>
+}
+
+@if (Model.Document.SourceConflicts.Count > 0)
+{
+    <section class="form-section mb-3">
+        <h2>Historia konfliktów</h2>
+        <p>Każda nowa różniąca się treść i każda decyzja pozostają osobnym wpisem.</p>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr><th>Wykryto</th><th>Różniące się źródło</th><th>Decyzja</th></tr>
+                </thead>
+                <tbody>
+                @foreach (var conflict in Model.Document.SourceConflicts)
+                {
+                    <tr>
+                        <td>@conflict.DetectedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>
+                            @if (conflict.StoredFileId is Guid conflictFileId)
+                            {
+                                <a href="/Files/@conflictFileId" target="_blank" rel="noopener">Otwórz zachowany plik KSeF</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Różniące się źródło nie było dostępne do zachowania.</span>
+                            }
+                        </td>
+                        <td>
+                            @if (conflict.ResolvedAtUtc is DateTimeOffset conflictResolvedAt)
+                            {
+                                <span class="d-block">@conflictResolvedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                                <span>@conflict.Resolution</span>
+                            }
+                            else
+                            {
+                                <span class="text-danger">Oczekuje na wyjaśnienie</span>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+
+<div class="document-review-grid">
+    <section class="document-preview form-section">
+        <h2>Źródło</h2>
+        @if (Model.Document.SourceFileId is Guid fileId)
+        {
+            <iframe src="/Files/@fileId" title="Podgląd dokumentu źródłowego" sandbox></iframe>
+            <a href="/Files/@fileId" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary mt-2">Otwórz w nowej karcie</a>
+        }
+        else
+        {
+            <p class="text-danger">Brakuje pliku źródłowego. Dokument wymaga rozwiązania błędu.</p>
+        }
+    </section>
+
+    <section class="form-section">
+        <h2>Dane do sprawdzenia</h2>
+        @if (Model.Document.ExtractionConfidence is decimal confidence)
+        {
+            <p class="confidence-note">Pewność podpowiedzi: <strong>@($"{confidence * 100:0}%")</strong>. Zawsze porównaj ją ze źródłem.</p>
+        }
+        else
+        {
+            <p class="confidence-note">Brak wiarygodnej podpowiedzi. Uzupełnij pola ręcznie.</p>
+        }
+
+        @if (Model.Document.Summary.Status == SourceDocumentStatus.Acquired)
+        {
+            <div class="alert alert-info">Dokument czeka na lokalne rozpoznanie. Odśwież stronę za chwilę.</div>
+        }
+        else if (Model.Document.Summary.Status == SourceDocumentStatus.ErrorToResolve)
+        {
+            <div class="alert alert-danger">Nie udało się bezpiecznie rozpoznać źródła albo wykryto jego zmianę. Zachowany plik nie został nadpisany.</div>
+        }
+        else if (Model.Document.Summary.Status == SourceDocumentStatus.DataToReview)
+        {
+            <form method="post" asp-page-handler="Confirm" class="compact-form">
+                <firemka-validation-summary summary="ModelOnly" class="text-danger" role="alert" />
+                <div class="field">
+                    <label asp-for="Input.InvoiceNumber" class="form-label"></label>
+                    <small class="field-confidence">Pewność: @FormatConfidence(Model.ConfidenceFor(nameof(DocumentData.InvoiceNumber)))</small>
+                    <input asp-for="Input.InvoiceNumber" class="form-control" />
+                    <span asp-validation-for="Input.InvoiceNumber" class="text-danger"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Input.SellerName" class="form-label"></label>
+                    <small class="field-confidence">Pewność: @FormatConfidence(Model.ConfidenceFor(nameof(DocumentData.SellerName)))</small>
+                    <input asp-for="Input.SellerName" class="form-control" />
+                    <span asp-validation-for="Input.SellerName" class="text-danger"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Input.SellerTaxId" class="form-label"></label>
+                    <small class="field-confidence">Pewność: @FormatConfidence(Model.ConfidenceFor(nameof(DocumentData.SellerTaxId)))</small>
+                    <input asp-for="Input.SellerTaxId" class="form-control" />
+                    <span asp-validation-for="Input.SellerTaxId" class="text-danger"></span>
+                </div>
+                <div class="field">
+                    <label asp-for="Input.SellerAddress" class="form-label"></label>
+                    <input asp-for="Input.SellerAddress" class="form-control" />
+                    <span asp-validation-for="Input.SellerAddress" class="text-danger"></span>
+                </div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label asp-for="Input.IssueDate" class="form-label"></label>
+                        <small class="field-confidence">Pewność: @FormatConfidence(Model.ConfidenceFor(nameof(DocumentData.IssueDate)))</small>
+                        <input asp-for="Input.IssueDate" type="date" class="form-control" />
+                        <span asp-validation-for="Input.IssueDate" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Input.GrossAmount" class="form-label"></label>
+                        <small class="field-confidence">Pewność: @FormatConfidence(Model.ConfidenceFor(nameof(DocumentData.GrossAmount)))</small>
+                        <input asp-for="Input.GrossAmount" inputmode="decimal" class="form-control" />
+                        <span asp-validation-for="Input.GrossAmount" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label asp-for="Input.Currency" class="form-label"></label>
+                    <small class="field-confidence">Pewność: @FormatConfidence(Model.ConfidenceFor(nameof(DocumentData.Currency)))</small>
+                    <input asp-for="Input.Currency" class="form-control" maxlength="3" />
+                    <span asp-validation-for="Input.Currency" class="text-danger"></span>
+                </div>
+                <button type="submit" class="btn btn-primary">Potwierdź dane</button>
+            </form>
+
+            <hr />
+            <form method="post" asp-page-handler="Unrelated" class="compact-form">
+                <label asp-for="UnrelatedReason" class="form-label">Dokument niezwiązany z firmą</label>
+                <textarea asp-for="UnrelatedReason" class="form-control" rows="2" placeholder="Podaj powód — zostanie zapisany w audycie."></textarea>
+                <span asp-validation-for="UnrelatedReason" class="text-danger"></span>
+                <button type="submit" class="btn btn-outline-danger">Oznacz jako niezwiązany</button>
+            </form>
+        }
+        else
+        {
+            <dl class="row mb-0">
+                <dt class="col-sm-5">Numer</dt><dd class="col-sm-7">@Model.Document.Summary.InvoiceNumber</dd>
+                <dt class="col-sm-5">Sprzedawca</dt><dd class="col-sm-7">@Model.Document.Summary.SellerName</dd>
+                <dt class="col-sm-5">Data</dt><dd class="col-sm-7">@Model.Document.Summary.IssueDate</dd>
+                <dt class="col-sm-5">Brutto</dt><dd class="col-sm-7">@Model.Document.Summary.GrossAmount @Model.Document.Summary.Currency</dd>
+            </dl>
+            @if (!string.IsNullOrWhiteSpace(Model.Document.UnrelatedReason))
+            {
+                <p class="mt-3"><strong>Powód:</strong> @Model.Document.UnrelatedReason</p>
+            }
+        }
+    </section>
+</div>
+
+<p class="mt-3"><a asp-page="Index">← Wróć do dokumentów</a></p>
+
+@functions {
+    private static string FormatConfidence(decimal? confidence) =>
+        confidence is null ? "brak podpowiedzi" : $"{confidence * 100:0}%";
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,7 @@
+.git
+.tooling
+.DS_Store
+**/bin
+**/obj
+TestResults
+.env

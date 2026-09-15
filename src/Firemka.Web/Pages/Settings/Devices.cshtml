@@ -1,0 +1,41 @@
+@page
+@model Firemka.Web.Pages.Settings.DevicesModel
+@{
+    ViewData["Title"] = "Zaufane urządzenia";
+}
+
+<h1>Zaufane urządzenia</h1>
+<p>Te urządzenia mogą pominąć kod TOTP po podaniu poprawnego hasła. Zaufanie wygasa po 30 dniach.</p>
+
+@if (Model.Devices.Count == 0)
+{
+    <p>Nie ma aktywnych zaufanych urządzeń.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Urządzenie</th>
+                    <th>Ostatnie użycie</th>
+                    <th>Wygasa</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var device in Model.Devices)
+                {
+                    <tr>
+                        <td>@device.DisplayName</td>
+                        <td>@device.LastUsedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@device.ExpiresAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<form method="post" asp-page-handler="RevokeAll">
+    <button type="submit" class="btn btn-outline-danger">Wyloguj wszystkie zaufane urządzenia</button>
+</form>

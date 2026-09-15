@@ -1,0 +1,7 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="../Firemka.Domain/Firemka.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

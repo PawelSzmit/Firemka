@@ -1,0 +1,76 @@
+@page
+@model Firemka.Web.Pages.Expenses.VehiclePoliciesModel
+@using Firemka.Domain.Vehicles
+@{
+    ViewData["Title"] = "Polityki samochodu";
+}
+
+<div class="page-intro">
+    <div class="eyebrow">Samochód</div>
+    <h1>Cztery niezależne polityki kosztowe</h1>
+    <p>Aplikacja nie utworzyła aktywnej polityki i nie przyjęła żadnego domyślnego procentu. Każdy rodzaj kosztu wymaga osobnej decyzji.</p>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+<firemka-validation-summary summary="ModelOnly" class="alert alert-danger" role="alert" />
+
+<div class="dashboard-grid">
+@foreach (var kind in Enum.GetValues<VehicleCostKind>())
+{
+    var policy = Model.Policies.Where(item => item.Kind == kind).OrderByDescending(item => item.VersionNumber).FirstOrDefault();
+    <section class="dashboard-card">
+        <span class="card-label">@KindLabel(kind)</span>
+        @if (policy is null)
+        {
+            <strong class="card-value">Nie skonfigurowano</strong>
+            <p>Najpierw utwórz pustą politykę. Nie aktywuje to żadnej reguły.</p>
+            <form method="post" asp-page-handler="Create"><input type="hidden" name="kind" value="@kind" /><button class="btn btn-outline-primary" type="submit">Utwórz pustą politykę</button></form>
+        }
+        else
+        {
+            <strong class="card-value">@StatusLabel(policy.Status) · v@policy.VersionNumber</strong>
+            <small>Od @policy.EffectiveFromMonth.ToString("MM.yyyy")</small>
+            @if (policy.Status == VehiclePolicyStatus.PendingEvidence)
+            {
+                <ul>
+                    @foreach (var missing in policy.MissingRequirements)
+                    {
+                        <li>@missing</li>
+                    }
+                </ul>
+                <form method="post" asp-page-handler="Activate" class="compact-form">
+                    <input type="hidden" name="policyId" value="@policy.Id" />
+                    <div><label asp-for="Input.VatDeductionPercent"></label><input asp-for="Input.VatDeductionPercent" class="form-control" inputmode="decimal" /></div>
+                    <div><label asp-for="Input.KpirCostPercent"></label><input asp-for="Input.KpirCostPercent" class="form-control" inputmode="decimal" /></div>
+                    <div><label asp-for="Input.EvidenceReference"></label><textarea asp-for="Input.EvidenceReference" class="form-control" rows="2"></textarea></div>
+                    <button class="btn btn-primary" type="submit">Aktywuj po potwierdzeniu</button>
+                </form>
+            }
+            else if (policy.Status == VehiclePolicyStatus.Active)
+            {
+                <p>VAT: @policy.VatDeductionPercent% · KPiR: @policy.KpirCostPercent%</p>
+                <p><strong>Podstawa:</strong> @policy.EvidenceReference</p>
+                <form method="post" asp-page-handler="Revision" class="compact-form">
+                    <input type="hidden" name="policyId" value="@policy.Id" />
+                    <label for="effective-@policy.Id">Nowa wersja od miesiąca</label>
+                    <input id="effective-@policy.Id" name="effectiveFromMonth" type="date" class="form-control" />
+                    <button class="btn btn-outline-primary" type="submit">Utwórz nową pustą wersję</button>
+                </form>
+            }
+        }
+    </section>
+}
+</div>
+
+@functions {
+    private static string KindLabel(VehicleCostKind kind) => kind switch { VehicleCostKind.LeaseOrRental => "Najem lub leasing", VehicleCostKind.Operation => "Eksploatacja", VehicleCostKind.Insurance => "Ubezpieczenie", _ => "Publiczne ładowanie" };
+    private static string StatusLabel(VehiclePolicyStatus status) => status switch { VehiclePolicyStatus.PendingEvidence => "Wymaga ustalenia polityki", VehiclePolicyStatus.Active => "Aktywna", _ => "Nieaktywna" };
+}
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

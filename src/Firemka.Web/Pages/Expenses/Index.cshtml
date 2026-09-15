@@ -1,0 +1,37 @@
+@page
+@model Firemka.Web.Pages.Expenses.IndexModel
+@{
+    ViewData["Title"] = "Wydatki";
+}
+
+<div class="page-intro">
+    <div class="eyebrow">Koszty</div>
+    <h1>Wydatki wymagające decyzji</h1>
+    <p>Pierwszy dokument nowego rodzaju zawsze czeka na Twoją decyzję. Aplikacja nie wpisuje własnych procentów podatkowych.</p>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a asp-page="VehiclePolicies" class="btn btn-outline-primary">Polityki samochodu</a>
+    <a asp-page="Charging" class="btn btn-outline-primary">Ładowanie domowe</a>
+</div>
+
+@if (Model.Documents.Count == 0)
+{
+    <section class="empty-state">
+        <h2>Nie ma dokumentów czekających na regułę</h2>
+        <p>Potwierdzone dokumenty z faktur zakupowych pojawią się tutaj automatycznie.</p>
+    </section>
+}
+else
+{
+    <div class="dashboard-grid">
+        @foreach (var document in Model.Documents)
+        {
+            <a asp-page="Review" asp-route-id="@document.Id" class="dashboard-card text-decoration-none text-dark">
+                <span class="card-label">@document.InvoiceNumber</span>
+                <strong class="card-value">@document.SellerName</strong>
+                <small>@document.GrossAmount?.ToString("N2") @document.Currency · wymaga decyzji</small>
+            </a>
+        }
+    </div>
+}

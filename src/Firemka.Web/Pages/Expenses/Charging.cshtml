@@ -1,0 +1,107 @@
+@page
+@model Firemka.Web.Pages.Expenses.ChargingModel
+@using System.Globalization
+@{
+    ViewData["Title"] = "Ładowanie domowe";
+    var culture = CultureInfo.GetCultureInfo("pl-PL");
+    var currentRate = Model.Company.EnergyRates.Where(item => item.ValidFromMonth <= new DateOnly(Model.SelectedYear, Model.SelectedMonth, 1)).OrderByDescending(item => item.ValidFromMonth).First();
+}
+
+<div class="page-intro">
+    <div class="eyebrow">Samochód elektryczny</div>
+    <h1>Ładowanie domowe</h1>
+    <p>CSV tworzy wyłącznie techniczne zestawienie energii i kosztu. Nie tworzy wpisu KPiR ani VAT.</p>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+<firemka-validation-summary summary="All" class="alert alert-danger" role="alert" />
+
+<form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-4">
+    <div><label for="year">Rok</label><input id="year" name="year" type="number" value="@Model.SelectedYear" class="form-control" /></div>
+    <div><label for="month">Miesiąc</label><input id="month" name="month" type="number" min="1" max="12" value="@Model.SelectedMonth" class="form-control" /></div>
+    <button class="btn btn-outline-primary">Pokaż</button>
+</form>
+
+<section class="form-section mb-4">
+    <h2>Profil pliku CSV</h2>
+    @if (Model.MonthData.LatestProfile is null)
+    {
+        <p>Ustawienia odpowiadają formatowi dostarczanemu przez Twoją domową ładowarkę. Możesz je zmienić tylko wtedy, gdy urządzenie zacznie eksportować inny plik.</p>
+        <form method="post" asp-page-handler="SaveProfile" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth" class="compact-form">
+            <div class="form-grid">
+                <div><label asp-for="Profile.Separator"></label><input asp-for="Profile.Separator" class="form-control" /></div>
+                <div><label asp-for="Profile.TimestampColumn"></label><input asp-for="Profile.TimestampColumn" class="form-control" /></div>
+                <div><label asp-for="Profile.EnergyWhColumn"></label><input asp-for="Profile.EnergyWhColumn" class="form-control" /></div>
+                <div><label asp-for="Profile.DateFormat"></label><input asp-for="Profile.DateFormat" class="form-control" /></div>
+                <div><label asp-for="Profile.TimeZoneId"></label><input asp-for="Profile.TimeZoneId" class="form-control" /></div>
+                <div><label asp-for="Profile.IdentityColumn"></label><input asp-for="Profile.IdentityColumn" class="form-control" /></div>
+            </div>
+            <button type="submit" class="btn btn-primary">Zapisz nieaktywny profil</button>
+        </form>
+    }
+    else
+    {
+        var profile = Model.MonthData.LatestProfile;
+        <p><strong>Wersja @profile.VersionNumber:</strong> separator „@profile.Separator”, czas „@profile.TimestampColumn”, energia „@profile.EnergyWhColumn”, @profile.TimeZoneId.</p>
+        @if (!profile.IsActive)
+        {
+            <form method="post" asp-page-handler="ActivateProfile" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth">
+                <input type="hidden" name="profileId" value="@profile.Id" />
+                <div class="form-check mb-2"><input asp-for="WhConfirmed" class="form-check-input" /><label asp-for="WhConfirmed" class="form-check-label">Potwierdzam, że kolumna energii ma jednostkę Wh</label></div>
+                <button class="btn btn-primary" type="submit">Aktywuj profil</button>
+            </form>
+        }
+        else
+        {
+            <p class="text-success"><strong>Profil aktywny; jednostka Wh potwierdzona.</strong></p>
+        }
+    }
+</section>
+
+<section class="form-section mb-4">
+    <h2>Stawka energii</h2>
+    <p>W tym miesiącu obowiązuje <strong>@currentRate.GrossPricePerKwh.ToString("N4", culture) zł/kWh</strong> od @currentRate.ValidFromMonth.ToString("MM.yyyy"). Zmiany stawki zapisujesz w <a asp-page="/Settings/Index">Ustawieniach</a> jako nowy okres.</p>
+</section>
+
+<section class="form-section mb-4">
+    <h2>Import sesji</h2>
+    @if (Model.MonthData.LatestProfile?.IsActive == true)
+    {
+        <form method="post" enctype="multipart/form-data" asp-page-handler="Import" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth">
+            <input type="hidden" name="profileId" value="@Model.MonthData.LatestProfile.Id" />
+            <label asp-for="CsvFile">Plik CSV</label><input asp-for="CsvFile" type="file" accept=".csv,text/csv" class="form-control mb-2" />
+            <button class="btn btn-primary" type="submit">Sprawdź i zaimportuj cały plik</button>
+        </form>
+    }
+    else
+    {
+        <p>Import jest zablokowany do aktywacji profilu i potwierdzenia Wh.</p>
+    }
+    <p class="mt-2">Sesje w miesiącu: <strong>@Model.MonthData.SessionCount</strong>.</p>
+</section>
+
+<section class="form-section">
+    <h2>Zestawienie miesiąca</h2>
+    @if (Model.MonthData.LatestReport is null)
+    {
+        <p>Nie ma jeszcze zapisanego zestawienia.</p>
+    }
+    else
+    {
+        var report = Model.MonthData.LatestReport;
+        <p><strong>@report.TotalKwh.ToString("N3", culture) kWh</strong> · <strong>@report.GrossCost.ToString("N2", culture) zł</strong> · wersja @report.VersionNumber</p>
+        <div class="alert alert-warning">@report.TaxStatus</div>
+    }
+    <form method="post" asp-page-handler="GenerateReport" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth">
+        <button class="btn btn-outline-primary" type="submit" disabled="@(Model.MonthData.SessionCount == 0)">Zapisz wersję zestawienia</button>
+    </form>
+    <p class="mt-2"><strong>Ta czynność nie księguje kosztu i nie odlicza VAT.</strong></p>
+</section>
+
+@section Scripts
+{
+    <partial name="_ValidationScriptsPartial" />
+}

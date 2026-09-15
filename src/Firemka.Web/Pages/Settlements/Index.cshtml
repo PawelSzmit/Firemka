@@ -1,0 +1,22 @@
+@page
+@{
+    ViewData["Title"] = "Rozliczenia";
+}
+
+<header class="page-intro">
+    <p class="eyebrow">Rozliczenia</p>
+    <h1>Obliczenia i zamknięcia miesięcy</h1>
+    <p>Sprawdzaj źródła, szacunki PIT, VAT i składki zdrowotnej oraz zapisuj niezmienne wersje zamknięć.</p>
+</header>
+
+<section class="form-section">
+    <h2>Wybrany miesiąc</h2>
+    <p>Otwórz bieżący miesiąc, a następnie przełączaj się między okresami na stronie szczegółów.</p>
+    <a class="btn btn-primary" asp-page="/Settlements/Month">Przejdź do rozliczenia miesiąca</a>
+    <a class="btn btn-outline-primary" asp-page="/Settlements/Year">Przejdź do zamknięcia roku</a>
+</section>
+
+<section class="notice-card">
+    <h2>Granice tego modułu</h2>
+    <p>Moduł zapisuje zamknięcia miesięcy i roku. Nie wykonuje przelewów ani nie składa pełnego zeznania PIT.</p>
+</section>

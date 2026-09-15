@@ -1,0 +1,355 @@
+@page "/Settlements/Month"
+@model Firemka.Web.Pages.Settlements.MonthModel
+@using System.Globalization
+@using Firemka.Domain.Calculations
+@{
+    ViewData["Title"] = "Rozliczenie miesiąca";
+    var culture = CultureInfo.GetCultureInfo("pl-PL");
+    var monthName = culture.DateTimeFormat.GetMonthName(Model.SelectedMonth);
+    var calculation = Model.Closing.Calculation;
+    var canEditInputs = Model.Closing.LatestSettlement?.Status != MonthSettlementStatus.Closed;
+    string Amount(decimal? value) => value is null ? "Brak danych" : $"{value.Value.ToString("N2", culture)} zł";
+}
+
+<header class="page-intro settlement-heading">
+    <p class="eyebrow">Rozliczenie miesiąca</p>
+    <h1>@(char.ToUpper(monthName[0], culture))@monthName[1..] @Model.SelectedYear</h1>
+    <p>@Model.Closing.CompanyName</p>
+    <nav class="month-switcher" aria-label="Zmiana miesiąca">
+        @{ var previous = Model.Closing.Month.AddMonths(-1); var next = Model.Closing.Month.AddMonths(1); }
+        <a asp-page="/Settlements/Month" asp-route-year="@previous.Year" asp-route-month="@previous.Month">← Poprzedni</a>
+        <a asp-page="/Month/Index" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth">Wróć do podsumowania</a>
+        <a asp-page="/Settlements/Month" asp-route-year="@next.Year" asp-route-month="@next.Month">Następny →</a>
+    </nav>
+</header>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div class="alert alert-success" role="status">@Model.StatusMessage</div>
+}
+
+<firemka-validation-summary summary="All" class="alert alert-danger" role="alert" />
+
+@if (calculation?.Trust == CalculationTrust.TechnicalPreview)
+{
+    <section class="notice-card technical-preview" role="status">
+        @if (Model.Closing.RuleSet?.Trust == CalculationRuleTrust.ReferenceOnly)
+        {
+            <h2>Szacunek techniczny — niezatwierdzone zasady</h2>
+            <p>Wartości pomagają sprawdzić dane i sposób liczenia. Nie są podstawą do zamknięcia miesiąca, dopóki zasady nie zostaną niezależnie potwierdzone.</p>
+        }
+        else
+        {
+            <h2>Szacunek roboczy — są jeszcze braki do uzupełnienia</h2>
+            <p>Zasady są potwierdzone, ale przed zamknięciem miesiąca trzeba rozwiązać braki pokazane niżej.</p>
+        }
+    </section>
+}
+
+<div class="settlement-sections">
+    <section class="form-section" id="sources">
+        <p class="eyebrow">1. Dane wejściowe</p>
+        <h2>Źródła i wyjaśnienie</h2>
+        @if (calculation is null)
+        {
+            <p>Brakuje zasad pozwalających przygotować nawet roboczy szacunek.</p>
+        }
+        else
+        {
+            <dl class="settlement-summary">
+                <div><dt>Przychód w miesiącu</dt><dd>@Amount(calculation.RevenueMonth)</dd></div>
+                <div><dt>Koszty w miesiącu</dt><dd>@Amount(calculation.CostsMonth)</dd></div>
+                <div><dt>VAT należny</dt><dd>@Amount(calculation.OutputVatMonth)</dd></div>
+                <div><dt>VAT naliczony</dt><dd>@Amount(calculation.InputVatMonth)</dd></div>
+            </dl>
+            <div class="table-responsive">
+                <table class="table explanation-table">
+                    <thead><tr><th>Składnik</th><th class="text-end">Kwota</th><th>Skąd pochodzi</th></tr></thead>
+                    <tbody>
+                    @foreach (var line in calculation.Lines.OrderBy(item => item.Sequence))
+                    {
+                        <tr class="@(line.IsFormula ? "formula-line" : "source-line")">
+                            <td>@line.Label</td>
+                            <td class="text-end text-nowrap">@Amount(line.Amount)</td>
+                            <td>
+                                @if (line.SourceReference.StartsWith("/", StringComparison.Ordinal))
+                                {
+                                    <a href="@line.SourceReference">Otwórz powiązane dane</a>
+                                }
+                                else if (!line.IsFormula)
+                                {
+                                    <span class="source-reference">@line.SourceReference</span>
+                                }
+                                else
+                                {
+                                    <span>Wynik wzoru</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <section class="form-section" id="calculation">
+        <p class="eyebrow">2. Wynik</p>
+        <h2>PIT, VAT i zdrowotna</h2>
+        <div class="calculation-grid">
+            <article class="dashboard-card dashboard-card-primary">
+                <span class="card-label">Zaliczka PIT</span>
+                <strong class="card-value">@Amount(calculation?.PitAdvanceDue)</strong>
+                @if (calculation is not null)
+                {
+                    <small>Podstawa po zaokrągleniu: @Amount(calculation.PitTaxBase)</small>
+                    <small>PIT narastająco: @Amount(calculation.CumulativePitTax)</small>
+                    @if (calculation.CanDeferPitPayment)
+                    {
+                        <small class="estimate-option">Możliwe odroczenie płatności do przekroczenia progu — decyzja nie jest podejmowana automatycznie.</small>
+                    }
+                }
+            </article>
+            <article class="dashboard-card">
+                <span class="card-label">VAT do zapłaty</span>
+                <strong class="card-value">@Amount(calculation?.VatPayableRounded)</strong>
+                @if (calculation is not null)
+                {
+                    <small>Przed zaokrągleniem: @Amount(calculation.VatPayable)</small>
+                    <small>Do przeniesienia: @Amount(calculation.VatCarryForward)</small>
+                }
+            </article>
+            <article class="dashboard-card">
+                <span class="card-label">Składka zdrowotna</span>
+                <strong class="card-value">@Amount(calculation?.HealthContribution)</strong>
+                @if (calculation is not null)
+                {
+                    <small>Podstawa: @Amount(calculation.HealthBasis)</small>
+                    <small>Dochód poprzedniego miesiąca: @Amount(calculation.PreviousMonthHealthIncome)</small>
+                }
+            </article>
+        </div>
+    </section>
+
+    <section class="form-section" id="declaration">
+        <p class="eyebrow">3. Potwierdzenia właściciela</p>
+        <h2>Dane miesięczne</h2>
+        @if (!canEditInputs)
+        {
+            <p class="confidence-note">Ta wersja miesiąca jest zamknięta. Aby zmienić dane, najpierw rozpocznij korektę.</p>
+        }
+        else
+        {
+            <form method="post" asp-page-handler="Declaration" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth" class="compact-form declaration-form">
+                <div class="form-grid">
+                    <div class="field">
+                        <label asp-for="Declaration.SocialContributionsDeductible" class="form-label"></label>
+                        <input asp-for="Declaration.SocialContributionsDeductible" class="form-control" inputmode="decimal" />
+                        <span asp-validation-for="Declaration.SocialContributionsDeductible" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Declaration.PitBaseAdjustment" class="form-label"></label>
+                        <input asp-for="Declaration.PitBaseAdjustment" class="form-control" inputmode="decimal" />
+                        <span asp-validation-for="Declaration.PitBaseAdjustment" class="text-danger"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Declaration.HealthIncomeAdjustment" class="form-label"></label>
+                        <input asp-for="Declaration.HealthIncomeAdjustment" class="form-control" inputmode="decimal" />
+                        <span asp-validation-for="Declaration.HealthIncomeAdjustment" class="text-danger"></span>
+                    </div>
+                    @if (Model.Closing.IsFirstBusinessMonth)
+                    {
+                        <div class="field opening-balance">
+                            <label asp-for="Declaration.OpeningVatCarryForward" class="form-label"></label>
+                            <input asp-for="Declaration.OpeningVatCarryForward" class="form-control" inputmode="decimal" />
+                            <span asp-validation-for="Declaration.OpeningVatCarryForward" class="text-danger"></span>
+                        </div>
+                        <div class="field opening-balance">
+                            <label asp-for="Declaration.OpeningPitAdvancesDue" class="form-label"></label>
+                            <input asp-for="Declaration.OpeningPitAdvancesDue" class="form-control" inputmode="decimal" />
+                            <span asp-validation-for="Declaration.OpeningPitAdvancesDue" class="text-danger"></span>
+                        </div>
+                        <div class="form-check field-wide">
+                            <input asp-for="Declaration.OpeningBalancesConfirmed" class="form-check-input" />
+                            <label asp-for="Declaration.OpeningBalancesConfirmed" class="form-check-label"></label>
+                            <span asp-validation-for="Declaration.OpeningBalancesConfirmed" class="text-danger d-block"></span>
+                        </div>
+                    }
+                    <div class="form-check field-wide">
+                        <input asp-for="Declaration.HealthIncomeConfirmed" class="form-check-input" />
+                        <label asp-for="Declaration.HealthIncomeConfirmed" class="form-check-label"></label>
+                        <span asp-validation-for="Declaration.HealthIncomeConfirmed" class="text-danger d-block"></span>
+                    </div>
+                    <div class="field field-wide">
+                        <label asp-for="Declaration.EvidenceReference" class="form-label"></label>
+                        <textarea asp-for="Declaration.EvidenceReference" class="form-control" rows="2"></textarea>
+                        <span asp-validation-for="Declaration.EvidenceReference" class="text-danger"></span>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Zapisz potwierdzone dane</button>
+            </form>
+        }
+    </section>
+
+    <section class="form-section" id="adjustments">
+        <p class="eyebrow">4. Wyjątki</p>
+        <h2>Jawne korekty danych</h2>
+        @if (Model.Closing.Adjustments.Count > 0)
+        {
+            <ul class="adjustment-list">
+            @foreach (var adjustment in Model.Closing.Adjustments)
+            {
+                <li>
+                    <strong>@adjustment.Reason</strong>
+                    <span>@(adjustment.Kind == MonthAdjustmentKind.SalesRecognition ? "bez zmiany kwoty" : Amount(adjustment.Amount)) · @adjustment.EvidenceReference</span>
+                </li>
+            }
+            </ul>
+        }
+        else
+        {
+            <p>Nie dodano żadnych ręcznych korekt.</p>
+        }
+
+        @if (canEditInputs)
+        {
+            <form method="post" asp-page-handler="Adjustment" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth" class="compact-form adjustment-form">
+                <div class="form-grid">
+                    <div class="field">
+                        <label asp-for="Adjustment.Kind" class="form-label"></label>
+                        <select asp-for="Adjustment.Kind" class="form-select">
+                            <option value="PitRevenue">Przychód do PIT</option>
+                            <option value="KpirCost">Koszt w KPiR</option>
+                            <option value="VatOutput">VAT należny</option>
+                            <option value="VatInput">VAT naliczony</option>
+                            <option value="HealthIncome">Dochód do składki zdrowotnej</option>
+                            <option value="ForeignServiceVatOutput">VAT należny od usługi zagranicznej</option>
+                            <option value="SalesRecognition">Potwierdzenie okresu spóźnionej sprzedaży</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label asp-for="Adjustment.Amount" class="form-label"></label>
+                        <input asp-for="Adjustment.Amount" class="form-control" inputmode="decimal" />
+                        <span asp-validation-for="Adjustment.Amount" class="text-danger"></span>
+                    </div>
+                    <div class="field field-wide">
+                        <label asp-for="Adjustment.Reason" class="form-label"></label>
+                        <input asp-for="Adjustment.Reason" class="form-control" />
+                        <span asp-validation-for="Adjustment.Reason" class="text-danger"></span>
+                    </div>
+                    <div class="field field-wide">
+                        <label asp-for="Adjustment.EvidenceReference" class="form-label"></label>
+                        <input asp-for="Adjustment.EvidenceReference" class="form-control" />
+                        <span asp-validation-for="Adjustment.EvidenceReference" class="text-danger"></span>
+                    </div>
+                    <details class="field-wide optional-links">
+                        <summary>Powiąż z konkretnym dokumentem, jeśli wymaga tego wyjątek</summary>
+                        <label asp-for="Adjustment.SourceDocumentId" class="form-label"></label>
+                        <input asp-for="Adjustment.SourceDocumentId" class="form-control" />
+                        <span asp-validation-for="Adjustment.SourceDocumentId" class="text-danger"></span>
+                        <label asp-for="Adjustment.SalesInvoiceId" class="form-label"></label>
+                        <input asp-for="Adjustment.SalesInvoiceId" class="form-control" />
+                        <span asp-validation-for="Adjustment.SalesInvoiceId" class="text-danger"></span>
+                    </details>
+                </div>
+                <button type="submit" class="btn btn-outline-primary">Dodaj udokumentowaną korektę</button>
+            </form>
+        }
+    </section>
+
+    <section class="form-section" id="blockers">
+        <p class="eyebrow">5. Kontrola kompletności</p>
+        <h2>Braki do rozwiązania</h2>
+        @if (Model.Closing.Blockers.Count == 0)
+        {
+            <p class="ready-state">Wszystkie wymagane dane i potwierdzenia są kompletne.</p>
+        }
+        else
+        {
+            <ol class="blocker-list">
+            @foreach (var blocker in Model.Closing.Blockers)
+            {
+                <li>
+                    <strong>@blocker.Message</strong>
+                    <a href="@blocker.ActionUrl">Przejdź do miejsca naprawy</a>
+                </li>
+            }
+            </ol>
+        }
+    </section>
+
+    <section class="form-section" id="history">
+        <p class="eyebrow">6. Niezmienna historia</p>
+        <h2>Zamknięcie i historia</h2>
+        @if (Model.Closing.LatestSettlement?.Status == MonthSettlementStatus.Closed)
+        {
+            <p class="closed-state">Miesiąc jest zamknięty. Zapisana wersja nie zmienia się po późniejszych edycjach źródeł.</p>
+            <p><a asp-page="/Settlements/Filings" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth" class="btn btn-outline-primary">Przygotuj pliki US i ZUS</a></p>
+            @if (Model.Closing.HasInputDrift)
+            {
+                <div class="alert alert-warning">
+                    <strong>Dane źródłowe zmieniły się od ostatniego zamknięcia.</strong>
+                    <p>Rozpocznij korektę, aby utworzyć następną wersję bez nadpisania poprzedniej.</p>
+                </div>
+                <form method="post" asp-page-handler="Correction" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth" class="compact-form correction-form">
+                    <label asp-for="Correction.Reason" class="form-label"></label>
+                    <textarea asp-for="Correction.Reason" class="form-control" rows="2"></textarea>
+                    <span asp-validation-for="Correction.Reason" class="text-danger"></span>
+                    <button type="submit" class="btn btn-warning">Rozpocznij korektę</button>
+                </form>
+            }
+        }
+        else
+        {
+            <form method="post" asp-page-handler="Close" asp-route-year="@Model.SelectedYear" asp-route-month="@Model.SelectedMonth">
+                @if (Model.Closing.Blockers.Count == 0)
+                {
+                    <button type="submit" data-testid="close-month" class="btn btn-primary">Zamknij miesiąc i zapisz wersję</button>
+                }
+                else
+                {
+                    <button type="submit" data-testid="close-month" disabled class="btn btn-secondary">Zamknięcie zablokowane</button>
+                }
+            </form>
+        }
+
+        @if (Model.Closing.SettlementHistory.Count == 0)
+        {
+            <p class="history-empty">Nie ma jeszcze zapisanej wersji zamknięcia.</p>
+        }
+        else
+        {
+            <div class="settlement-history">
+            @foreach (var settlement in Model.Closing.SettlementHistory.OrderByDescending(item => item.VersionNumber))
+            {
+                var storedCalculation = Model.Closing.CalculationHistory.SingleOrDefault(item => item.Id == settlement.CalculationId);
+                var previousCalculation = Model.Closing.CalculationHistory.SingleOrDefault(item => item.VersionNumber == settlement.VersionNumber - 1);
+                <article class="history-card">
+                    <h3>Wersja @settlement.VersionNumber</h3>
+                    <p><strong>@(settlement.Status == MonthSettlementStatus.Closed ? "Zamknięta" : "Korekta otwarta")</strong></p>
+                    @if (!string.IsNullOrWhiteSpace(settlement.CorrectionReason))
+                    {
+                        <p>Powód: @settlement.CorrectionReason</p>
+                    }
+                    @if (storedCalculation is not null)
+                    {
+                        <dl class="history-values">
+                            <div><dt>PIT</dt><dd>@Amount(storedCalculation.PitAdvanceDue)</dd></div>
+                            <div><dt>VAT</dt><dd>@Amount(storedCalculation.VatPayableRounded)</dd></div>
+                            <div><dt>Zdrowotna</dt><dd>@Amount(storedCalculation.HealthContribution)</dd></div>
+                        </dl>
+                        @if (previousCalculation is not null)
+                        {
+                            <p class="history-difference">Zmiana względem poprzedniej wersji: PIT @Amount(storedCalculation.PitAdvanceDue - previousCalculation.PitAdvanceDue), VAT @Amount(storedCalculation.VatPayableRounded - previousCalculation.VatPayableRounded), zdrowotna @Amount(storedCalculation.HealthContribution - previousCalculation.HealthContribution).</p>
+                        }
+                    }
+                </article>
+            }
+            </div>
+        }
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

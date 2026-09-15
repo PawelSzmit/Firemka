@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sztuczna próbka techniczna. Nie opisuje działalności Firemki, nie jest
+  dokumentem księgowym i nie może być wysyłana do urzędu.
+-->
+<JPK xmlns="http://jpk.mf.gov.pl/wzor/2024/10/30/10302/"
+     xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="JPK_PKPIR (3)" wersjaSchemy="1-0">JPK_PKPIR</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+    <CelZlozenia>0</CelZlozenia>
+    <DataWytworzeniaJPK>2026-09-09T12:00:00Z</DataWytworzeniaJPK>
+    <DataOd>2026-01-01</DataOd>
+    <DataDo>2026-12-31</DataDo>
+    <KodUrzedu>0202</KodUrzedu>
+  </Naglowek>
+  <Podmiot1 rola="Podatnik">
+    <OsobaNiefizyczna>
+      <NIP>7368335898</NIP>
+      <PelnaNazwa>DANE TESTOWE — NIE WYSYŁAĆ</PelnaNazwa>
+    </OsobaNiefizyczna>
+  </Podmiot1>
+  <PKPIRInfo>
+    <P_1>0.00</P_1>
+    <P_2>0.00</P_2>
+    <P_3>0.00</P_3>
+    <P_4>0.00</P_4>
+  </PKPIRInfo>
+  <PKPIRWiersz>
+    <K_1>1</K_1>
+    <K_2>2026-01-01</K_2>
+    <K_3A>TEST-0001</K_3A>
+    <K_5A>KONTRAHENT TESTOWY</K_5A>
+    <K_5B>ADRES TESTOWY</K_5B>
+    <K_6>TECHNICZNA PRÓBKA WALIDACJI</K_6>
+    <K_7>0.00</K_7>
+    <K_8>0.00</K_8>
+    <K_9>0.00</K_9>
+  </PKPIRWiersz>
+  <PKPIRCtrl>
+    <LiczbaWierszy>1</LiczbaWierszy>
+    <SumaPrzychodow>0.00</SumaPrzychodow>
+  </PKPIRCtrl>
+</JPK>

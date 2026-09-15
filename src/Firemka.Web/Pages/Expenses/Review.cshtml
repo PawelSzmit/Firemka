@@ -1,0 +1,129 @@
+@page "{id:guid}"
+@model Firemka.Web.Pages.Expenses.ReviewModel
+@using Firemka.Domain.Accounting
+@{
+    ViewData["Title"] = "Decyzja kosztowa";
+}
+
+<div class="page-intro">
+    <div class="eyebrow">Dokument kosztowy</div>
+    <h1>@Model.Document.Summary.InvoiceNumber</h1>
+    <p>@Model.Document.Summary.SellerName · @Model.Document.Summary.GrossAmount?.ToString("N2") @Model.Document.Summary.Currency</p>
+</div>
+
+<firemka-validation-summary summary="All" class="alert alert-danger" role="alert" />
+
+@if (Model.Review is null)
+{
+    <section class="form-section">
+        <h2>Uzupełnij cechy reguły</h2>
+        <p>Kwota i data nie należą do dopasowania. Kraj, waluta, VAT, sprzedawca i rodzaj kosztu muszą później pasować dokładnie.</p>
+        <form method="post" asp-page-handler="Prepare" class="compact-form">
+            <div class="form-grid">
+                <div><label asp-for="Preparation.SellerCountryCode"></label><input asp-for="Preparation.SellerCountryCode" class="form-control" /><span asp-validation-for="Preparation.SellerCountryCode" class="text-danger"></span></div>
+                <div><label asp-for="Preparation.VatTreatment"></label><select asp-for="Preparation.VatTreatment" class="form-select"><option value="">Wybierz</option><option value="DomesticTaxed">Zakup krajowy opodatkowany</option><option value="DomesticExempt">Zakup krajowy zwolniony</option><option value="ForeignService">Usługa zagraniczna</option><option value="NoVat">Bez VAT</option></select><span asp-validation-for="Preparation.VatTreatment" class="text-danger"></span></div>
+                <div><label asp-for="Preparation.VatRate"></label><input asp-for="Preparation.VatRate" class="form-control" inputmode="decimal" /><span asp-validation-for="Preparation.VatRate" class="text-danger"></span></div>
+                <div>
+                    <label asp-for="Preparation.ServiceKind"></label>
+                    <select asp-for="Preparation.ServiceKind" class="form-select">
+                        <option value="">Wybierz</option>
+                        @foreach (var kind in Enum.GetValues<CostServiceKind>())
+                        {
+                            <option value="@kind">@ServiceLabel(kind)</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Preparation.ServiceKind" class="text-danger"></span>
+                </div>
+                <div><label asp-for="Preparation.GrossAmount"></label><input asp-for="Preparation.GrossAmount" class="form-control" inputmode="decimal" /><span asp-validation-for="Preparation.GrossAmount" class="text-danger"></span></div>
+                <div><label asp-for="Preparation.InputVatAmount"></label><input asp-for="Preparation.InputVatAmount" class="form-control" inputmode="decimal" /><span asp-validation-for="Preparation.InputVatAmount" class="text-danger"></span></div>
+            </div>
+            @if (string.IsNullOrWhiteSpace(Model.Document.SellerTaxId))
+            {
+                <div class="form-check my-3">
+                    <input asp-for="Preparation.SellerNameFallbackConfirmed" class="form-check-input" />
+                    <label asp-for="Preparation.SellerNameFallbackConfirmed" class="form-check-label"></label>
+                </div>
+            }
+            <button type="submit" class="btn btn-primary">Przygotuj decyzję</button>
+        </form>
+    </section>
+}
+else if (Model.Review.Booking.Status == CostBookingStatus.PendingReview)
+{
+    <section class="notice-card mb-3">
+        <h2>Dlaczego dokument czeka?</h2>
+        <ul>
+            @foreach (var difference in Model.Review.Differences)
+            {
+                <li>@difference</li>
+            }
+        </ul>
+    </section>
+    <section class="form-section">
+        <h2>Jawna decyzja właściciela</h2>
+        <p>Aplikacja nie podpowiada procentów. Wpisz wartości i źródło, które samodzielnie zweryfikowałeś.</p>
+        <form method="post" class="compact-form">
+            <div class="form-grid">
+                <div><label asp-for="Decision.KpirCategory"></label><input asp-for="Decision.KpirCategory" class="form-control" /><span asp-validation-for="Decision.KpirCategory" class="text-danger"></span></div>
+                <div><label asp-for="Decision.VatDeductionPercent"></label><input asp-for="Decision.VatDeductionPercent" class="form-control" inputmode="decimal" /><span asp-validation-for="Decision.VatDeductionPercent" class="text-danger"></span></div>
+                <div><label asp-for="Decision.KpirCostPercent"></label><input asp-for="Decision.KpirCostPercent" class="form-control" inputmode="decimal" /><span asp-validation-for="Decision.KpirCostPercent" class="text-danger"></span></div>
+                <div>
+                    <label asp-for="Decision.KpirPeriodPolicy"></label>
+                    <select asp-for="Decision.KpirPeriodPolicy" class="form-select">
+                        <option value="">Wybierz</option>
+                        @foreach (var policy in Enum.GetValues<AccountingPeriodPolicy>())
+                        {
+                            <option value="@policy">@PeriodLabel(policy)</option>
+                        }
+                    </select>
+                </div>
+                <div><label asp-for="Decision.KpirPeriod"></label><input asp-for="Decision.KpirPeriod" type="date" class="form-control" /></div>
+                <div>
+                    <label asp-for="Decision.VatPeriodPolicy"></label>
+                    <select asp-for="Decision.VatPeriodPolicy" class="form-select">
+                        <option value="">Wybierz</option>
+                        @foreach (var policy in Enum.GetValues<AccountingPeriodPolicy>())
+                        {
+                            <option value="@policy">@PeriodLabel(policy)</option>
+                        }
+                    </select>
+                </div>
+                <div><label asp-for="Decision.VatPeriod"></label><input asp-for="Decision.VatPeriod" type="date" class="form-control" /></div>
+                <div class="form-grid-wide"><label asp-for="Decision.DecisionSource"></label><textarea asp-for="Decision.DecisionSource" class="form-control" rows="3"></textarea><span asp-validation-for="Decision.DecisionSource" class="text-danger"></span></div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="submit" asp-page-handler="ConfirmDocument" class="btn btn-outline-primary">Zastosuj tylko do tego dokumentu</button>
+                <button type="submit" asp-page-handler="ConfirmFuture" class="btn btn-primary">Zastosuj także do kolejnych</button>
+            </div>
+        </form>
+    </section>
+}
+else
+{
+    <div class="alert alert-success">Dokument został już zaksięgowany @(Model.Review.Booking.Automatic ? "automatycznie" : "ręcznie").</div>
+}
+
+@functions {
+    private static string ServiceLabel(CostServiceKind kind) => kind switch
+    {
+        CostServiceKind.Ai => "AI",
+        CostServiceKind.Vps => "VPS",
+        CostServiceKind.Internet => "Internet",
+        CostServiceKind.VehicleLeaseOrRental => "Najem lub leasing auta",
+        CostServiceKind.VehicleOperation => "Eksploatacja auta",
+        CostServiceKind.VehicleInsurance => "Ubezpieczenie auta",
+        CostServiceKind.PublicCharging => "Publiczne ładowanie",
+        _ => "Inny koszt",
+    };
+
+    private static string PeriodLabel(AccountingPeriodPolicy policy) => policy switch
+    {
+        AccountingPeriodPolicy.IssueMonth => "Miesiąc dokumentu",
+        AccountingPeriodPolicy.NextMonth => "Następny miesiąc",
+        _ => "Zawsze wybieram ręcznie",
+    };
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,149 @@
+@page "/Month"
+@model Firemka.Web.Pages.Month.IndexModel
+@using System.Globalization
+@using Firemka.Domain.Calculations
+@{
+    ViewData["Title"] = "Mój miesiąc";
+    var culture = CultureInfo.GetCultureInfo("pl-PL");
+    var monthName = culture.DateTimeFormat.GetMonthName(Model.Dashboard.Month);
+    string Amount(decimal? value) => value is null ? "Brak danych" : $"{value.Value.ToString("N2", culture)} zł";
+}
+
+<header class="page-intro month-heading">
+    <div>
+        <p class="eyebrow">Mój miesiąc</p>
+        <h1>@(char.ToUpper(monthName[0], culture))@monthName[1..] @Model.Dashboard.Year</h1>
+        @if (Model.Dashboard.IsCompanyConfigured)
+        {
+            <p>@Model.Dashboard.CompanyName</p>
+        }
+    </div>
+</header>
+
+@if (!Model.Dashboard.IsCompanyConfigured)
+{
+    <section class="empty-state">
+        <h2>Dokończ konfigurację firmy</h2>
+        <p>Zanim rozpoczniesz pracę z dokumentami, zapisz podstawowe dane firmy i stałego klienta.</p>
+        <a class="btn btn-primary" asp-page="/Setup/Company">Przejdź do konfiguracji</a>
+    </section>
+}
+else
+{
+    <div class="dashboard-grid month-estimate-grid">
+        <section class="dashboard-card dashboard-card-primary">
+            <span class="card-label">Szacunek PIT</span>
+            <strong class="card-value">@Amount(Model.Dashboard.PitAdvanceEstimate)</strong>
+            <small>Zaliczka za wybrany miesiąc</small>
+        </section>
+        <section class="dashboard-card">
+            <span class="card-label">Szacunek VAT</span>
+            <strong class="card-value">@Amount(Model.Dashboard.VatPaymentEstimate)</strong>
+            <small>Kwota do zapłaty po zaokrągleniu</small>
+        </section>
+        <section class="dashboard-card">
+            <span class="card-label">Składka zdrowotna</span>
+            <strong class="card-value">@Amount(Model.Dashboard.HealthContributionEstimate)</strong>
+            <small>Na podstawie osobno potwierdzonego dochodu</small>
+        </section>
+    </div>
+
+    @if (Model.Dashboard.EstimateTrust == CalculationTrust.TechnicalPreview)
+    {
+        <section class="notice-card technical-preview" role="status">
+            @if (Model.Dashboard.RuleSetTrust == CalculationRuleTrust.ReferenceOnly)
+            {
+                <h2>Szacunek techniczny — niezatwierdzone zasady</h2>
+                <p>Możesz sprawdzić sposób obliczeń, ale miesiąca nie da się zamknąć przed niezależnym potwierdzeniem zasad.</p>
+            }
+            else
+            {
+                <h2>Szacunek roboczy — są jeszcze braki do uzupełnienia</h2>
+                <p>Zasady są potwierdzone. Rozwiąż najbliższy brak pokazany niżej, aby przygotować miesiąc do zamknięcia.</p>
+            }
+        </section>
+    }
+
+    <div class="dashboard-grid month-work-grid">
+        <section class="dashboard-card">
+            <span class="card-label">Dokumenty do sprawdzenia</span>
+            <strong class="card-value" data-testid="documents-to-review">@Model.Dashboard.DocumentsToReview</strong>
+        </section>
+        <section class="dashboard-card">
+            <span class="card-label">Reguły do ustalenia</span>
+            <strong class="card-value">@Model.Dashboard.RulesToDefine</strong>
+        </section>
+        <section class="dashboard-card">
+            <span class="card-label">Błędy do rozwiązania</span>
+            <strong class="card-value">@Model.Dashboard.ErrorsToResolve</strong>
+        </section>
+        <section class="dashboard-card">
+            <span class="card-label">Status zamknięcia</span>
+            <strong class="month-status">@(Model.Dashboard.SettlementStatus switch
+            {
+                MonthSettlementStatus.Closed => "Miesiąc zamknięty",
+                MonthSettlementStatus.OpenCorrection => "Korekta otwarta",
+                _ => "Miesiąc otwarty",
+            })</strong>
+            @if (Model.Dashboard.SubscriptionNetMonthlyAmount is decimal subscription)
+            {
+                <small>Abonament netto: @subscription.ToString("N2", culture) zł</small>
+            }
+        </section>
+    </div>
+
+    <section class="form-section">
+        <div class="d-flex flex-wrap justify-content-between gap-2 align-items-start">
+            <div>
+                <p class="eyebrow">Terminy i płatności</p>
+                <h2>Co jest już opłacone</h2>
+            </div>
+            <a class="btn btn-outline-primary" asp-page="/Payments/Index" asp-route-year="@Model.Dashboard.Year" asp-route-month="@Model.Dashboard.Month">Otwórz płatności</a>
+        </div>
+        @if (Model.Dashboard.Payments is { Count: > 0 })
+        {
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead><tr><th>Należność</th><th>Kwota</th><th>Termin</th><th>Stan</th></tr></thead>
+                    <tbody>
+                    @foreach (var payment in Model.Dashboard.Payments)
+                    {
+                        <tr>
+                            <td>@payment.Label</td>
+                            <td>@Amount(payment.Amount)</td>
+                            <td>@payment.DueOn.ToString("dd.MM.yyyy", culture)</td>
+                            <td>@(payment.IsPaid ? "Opłacona" : "Do opłacenia")</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p>Brak należności dla tego miesiąca.</p>
+        }
+    </section>
+
+    <section class="notice-card" role="status">
+        <p class="eyebrow">Kopia zapasowa</p>
+        <h2>@Model.Dashboard.BackupStatus</h2>
+        <p>Stan ostatniej poprawnej kopii pojawi się tutaj po skonfigurowaniu klienta Mac w fazie kopii zapasowych.</p>
+    </section>
+
+    @if (Model.Dashboard.NextBlocker is { } blocker)
+    {
+        <section class="notice-card next-action" role="status">
+            <p class="eyebrow">Najbliższy krok</p>
+            <h2>@blocker.Message</h2>
+            <a class="btn btn-primary" href="@blocker.ActionUrl">Rozwiąż ten brak</a>
+        </section>
+    }
+
+    <p class="month-details-link">
+        <a class="btn btn-outline-primary"
+           asp-page="/Settlements/Month"
+           asp-route-year="@Model.Dashboard.Year"
+           asp-route-month="@Model.Dashboard.Month">Zobacz źródła, obliczenia i historię</a>
+    </p>
+}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<KEDU wersja_schematu="1" xmlns="http://www.zus.pl/2026/KEDU_5_7" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.zus.pl/2026/KEDU_5_7 kedu_5_7.xsd">
+<naglowek.KEDU><program><producent>Asseco Poland S.A.</producent><symbol>Płatnik</symbol><wersja>1002002</wersja></program><data_utworzenia_KEDU>2026-04-01</data_utworzenia_KEDU><status_kontroli>0</status_kontroli></naglowek.KEDU>
+<cechy.KEDU><cecha nazwa="WersjaMetrykiSlownikow"><wartosc>152</wartosc></cecha></cechy.KEDU><ZUSDRA id_dokumentu="1"  status_kontroli="0"  status_weryfikacji="P" >
+<identyfikacja.PL><id_PL_ZUS_status>B</id_PL_ZUS_status></identyfikacja.PL>
+<I><p1>6</p1><p2><p1>01</p1><p2>2022-02</p2></p2></I>
+<II><p1>5213017228</p1><p3>18111193241</p3><p6>TESTOWA S.C.</p6><p7>TESTOWA</p7><p8>KATARZYNA</p8><p9>1918-11-11</p9></II>
+<III><p1>3</p1><p3>1.67</p3></III>
+<IV><p1>0.00</p1><p2>0.00</p2><p3>0.00</p3><p4>0.00</p4><p5>0.00</p5><p6>0.00</p6><p7>0.00</p7><p8>0.00</p8><p9>0.00</p9><p10>0.00</p10><p11>0.00</p11><p12>0.00</p12><p13>0.00</p13><p14>0.00</p14><p15>0.00</p15><p16>0.00</p16><p17>0.00</p17><p18>0.00</p18><p19>0.00</p19><p20>0.00</p20><p21>0.00</p21><p22>0.00</p22><p23>0.00</p23><p24>0.00</p24><p25>0.00</p25><p26>0.00</p26><p27>0.00</p27><p28>0.00</p28><p29>0.00</p29><p30>0.00</p30><p31>0.00</p31><p32>0.00</p32><p33>0.00</p33><p34>0.00</p34><p35>0.00</p35><p36>0.00</p36><p37>0.00</p37></IV>
+<V><p1>0.00</p1><p2>0.00</p2><p3>0.00</p3><p4>0.00</p4><p5>0.00</p5></V>
+<VI><p1>0.00</p1><p2>0.00</p2><p3>0.00</p3><p4>0.00</p4><p5>0.00</p5><p6>0.00</p6><p7>0.00</p7></VI>
+<VII><p1>0.00</p1><p3>0.00</p3></VII>
+<IX><p1>0.00</p1><p2>0.00</p2></IX>
+<X><p1><p1>0510</p1><p2>0</p2><p3>0</p3></p1><p2>0.00</p2><p3>0.00</p3><p4>0.00</p4><p5>0.00</p5></X>
+<XIII><p1>2019-01-21</p1></XIII>
+</ZUSDRA>
+</KEDU>
