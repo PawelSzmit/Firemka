@@ -22,6 +22,10 @@ Właściciel podaje nazwę domeny oraz potwierdza, pod jaką zapisaną nazwą Ma
 
 Codex najpierw wykona tylko odczytowy audyt systemu, aktualizacji, zapory, portów, miejsca na dysku i Dockera. Każde ostrzeżenie zostanie przedstawione osobno przed zmianą. Ten etap przygotowuje A3, ale niczego sam nie naprawia.
 
+### Wynik audytu z 2026-09-15
+
+Audyt został wykonany bez zmian na serwerze. Jest 28 GB wolnego miejsca, więc Firemka mieści się pod względem dysku. Nie jest jeszcze gotowa do uruchomienia: doradca.cloud zajmuje porty 80/443, obecny wariant Caddy wymaga domeny, a 7,6 GiB RAM bez swapu daje ograniczony zapas przy równoczesnej pracy usług. Pełny zapis znajduje się w [odczytowym audycie VPS-a](phase12-vps-readonly-audit-20260915.md). A3–A5 pozostają otwarte.
+
 ## Krok 3 — osobno zatwierdzić ograniczone wdrożenie
 
 Właściciel zezwolił już na push sprawdzonych commitów do wskazanego repozytorium GitHub. Dopiero osobne polecenie może zezwolić na wdrożenie. Przed wdrożeniem trzeba potwierdzić punkt powrotu. Pierwsze uruchomienie pozostawia produkcyjny KSeF, SMTP i automatyczne wystawianie wyłączone.
@@ -66,4 +70,4 @@ Ten etap obejmuje F1–F6. Dopiero F6 oraz komplet A1–F5 pozwalają zmienić s
 
 ## Najbliższa potrzebna decyzja
 
-Krok 1 jest zakończony lokalnie. Do Kroku 2 właściciel podaje nazwę domeny, zapisaną nazwę połączenia Maca z VPS-em oraz wybiera kanał alarmowy, który rzeczywiście zauważy. Nie podaje hasła, tokenu ani prywatnego klucza.
+Krok 1 i odczytowa część Kroku 2 są zakończone. Przed jakąkolwiek zmianą trzeba zdecydować, jak Firemka ma być dostępna po adresie IP mimo zajętych portów 80/443, oraz ustalić wariant HTTPS albo świadomie ograniczony dostęp testowy. Nie wykonano deploya. Nie podaje hasła, tokenu ani prywatnego klucza.

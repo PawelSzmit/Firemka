@@ -2,6 +2,14 @@
 
 Ostatnia aktualizacja: 2026-09-15
 
+## Faza 12 — odczytowy audyt VPS-a 2026-09-15
+
+- Na zapisanym połączeniu `moj-vps` (`debian@57.128.200.20`) potwierdzono Debian 12, 4 vCPU, 74 GB dysku z 28 GB wolnego miejsca, 7,6 GiB RAM z 3,9 GiB dostępne i brak swapu.
+- Miejsce na dysku wystarcza dla czterech obrazów Firemki o łącznym rozmiarze około 1,7 GB oraz danych początkowych. Nie usuwano istniejącego cache ani plików.
+- Docker działa, UFW jest aktywny, a porty 80/443 są już zajęte przez `posrednik-frontend-1` aplikacji doradca.cloud. Dostęp Firemki po samym IP wymaga osobnego wariantu reverse proxy/portu i nie został uruchomiony.
+- Obecny wariant produkcyjny wymaga `FIREMKA_DOMAIN`; bez domeny nie ma jeszcze gotowego wariantu publicznego HTTPS dla Firemki. Limity pięciu usług Firemki sumują się do około 3,5 GiB i 6,5 vCPU, więc przy istniejącym obciążeniu potrzebne jest ostrożne potwierdzenie zapasu pamięci.
+- Szczegóły zapisano w [odczytowym audycie VPS-a](../../acceptance/phase12-vps-readonly-audit-20260915.md). Nie wykonano deploya ani żadnej zmiany na serwerze. A3–A5 pozostają otwarte.
+
 ## Faza 12 — ósme ponowne review: publikacja Git 2026-09-15
 
 - Ponowne sprawdzenie po pierwszym pushu potwierdziło zachowanie obu historii Git bez `force push`; zdalny startowy commit `24483d154b72d5d9c7981da418b82f371b57fc33` pozostaje osiągalny, a stan połączenia historii był `f6bcb44901001519b5c0db9ab1af413da978013b`.

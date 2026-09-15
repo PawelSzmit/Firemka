@@ -8,9 +8,9 @@ Każdy punkt wymaga daty, osoby wykonującej, krótkiego wyniku i ścieżki do d
 
 - [x] **A1.** Zapisano identyfikator kodu, obrazu WWW, workera, Caddy i PostgreSQL oraz najnowszą migrację. — **2026-09-15, Codex, ZALICZONE lokalnie**; dowód: [protokół pierwszego wydania](phase12-release-20260915-42dc5f4d437e.md) i [review protokołu](../active/firemka-jdg/review-faza-12-recheck-7.md).
 - [x] **A2.** Obrazy są przypięte skrótami, pełna lokalna bramka jest zielona, skan NuGet nie zgłasza znanej podatności, a skan obrazów nie zgłasza podatności krytycznej ani wysokiej. — **2026-09-15, Codex, ZALICZONE**; dowód: [lokalna bramka Fazy 12](phase12-local-gate.md).
-- [ ] **A3.** VPS ma wspierany system, aktualizacje bezpieczeństwa, aktywną zaporę i publiczne wyłącznie zatwierdzone porty.
-- [ ] **A4.** Kontenery mają ograniczone uprawnienia, zasoby i rotację logów; baza nie ma portu publicznego.
-- [ ] **A5.** HTTPS, certyfikat, HSTS, nagłówki, `/health`, miejsce na dysku i monitor zostały sprawdzone; timer działa, a nieudany wynik dociera uzgodnionym kanałem do właściciela.
+- [ ] **A3.** VPS ma wspierany system, aktualizacje bezpieczeństwa, aktywną zaporę i publiczne wyłącznie zatwierdzone porty. — **Odczyt 2026-09-15:** Debian 12 i UFW potwierdzone; porty 80/443 są współdzielonym punktem wejścia doradca.cloud, a sześć aktualizacji Docker/containerd pozostaje niezainstalowanych. Dowód: [odczytowy audyt VPS-a](phase12-vps-readonly-audit-20260915.md).
+- [ ] **A4.** Kontenery mają ograniczone uprawnienia, zasoby i rotację logów; baza nie ma portu publicznego. — **Odczyt 2026-09-15:** obecne kontenery mają brak indywidualnej rotacji `json-file`; limity Firemki są zapisane w Compose, ale kontenery Firemki nie działają. Dowód: [odczytowy audyt VPS-a](phase12-vps-readonly-audit-20260915.md).
+- [ ] **A5.** HTTPS, certyfikat, HSTS, nagłówki, `/health`, miejsce na dysku i monitor zostały sprawdzone; timer działa, a nieudany wynik dociera uzgodnionym kanałem do właściciela. — **Odczyt 2026-09-15:** dysk ma 28 GB wolnego, lecz brak domeny i zajęte 80/443 blokują potwierdzenie HTTPS Firemki; monitoru Firemki nie uruchamiano. Dowód: [odczytowy audyt VPS-a](phase12-vps-readonly-audit-20260915.md).
 
 ## B. Dane referencyjne i pełny miesiąc
 
