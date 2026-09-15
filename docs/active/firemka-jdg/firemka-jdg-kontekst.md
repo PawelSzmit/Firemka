@@ -1,6 +1,23 @@
 # Firemka — kontekst wykonawczy
 
-Ostatnia aktualizacja: 2026-09-14
+Ostatnia aktualizacja: 2026-09-15
+
+## Faza 12 — siódme ponowne review 2026-09-15
+
+- `review-faza-12-recheck-7.md` ma wynik **0× P1, 0× P2, 0× P3** w zakresie identyfikacji pierwszego wydania. Commit, wersja, cztery pełne identyfikatory obrazów, etykiety OCI i najnowsza migracja są spójne.
+- Każdy z czterech obrazów został ponownie przeskanowany. WWW, worker, Caddy i PostgreSQL mają po `0C / 0H`. Chwilowa blokada pamięci skanera przy równoległej próbie WWW zniknęła przy sekwencyjnym powtórzeniu bez zmiany obrazu.
+- Protokół `docs/acceptance/phase12-release-20260915-42dc5f4d437e.md` jest zatwierdzony, A1 checklisty jest zaliczone lokalnie, a Krok 1 instrukcji właściciela jest zakończony.
+- Granica pozostaje jawna: obrazy są lokalne dla `linux/arm64`; przyszłe skróty prywatnego rejestru i zgodność architektury docelowego VPS-a wymagają osobnego dowodu. Nie wykonano pushu ani wdrożenia.
+- Następny etap to Krok 2 — wyłącznie odczytowe przygotowanie i wykonanie audytu po wskazaniu domeny, zapisanej nazwy połączenia do VPS-a oraz rzeczywistego kanału alarmowego.
+
+## Faza 12 — pierwszy commit i obrazy wydania 2026-09-15
+
+- Po wyraźnej zgodzie właściciela utworzono pierwszy lokalny commit `42dc5f4d437e089d2939102af7a56fa26cde0806` z opisem `feat: implement Firemka MVP with pilot safeguards`. Commit zawiera 570 sprawdzonych plików. Nie wykonano pushu ani wdrożenia.
+- Przed commitem pełna lokalna bramka przeszła kompilację Release, 311 testów bez pominięć, 12 dodatkowych prób PostgreSQL, walidację kontraktów, migracji i obrazów oraz skany czterech obrazów bez podatności krytycznych i wysokich.
+- Z czystej rewizji utworzono wersję `20260915-42dc5f4d437e`. Obrazy WWW, workera, Caddy i PostgreSQL zapisują pełny skrót commita w etykiecie OCI; ponowne skany każdego obrazu zwróciły `0C / 0H`.
+- Pełne identyfikatory czterech lokalnych obrazów i najnowszej migracji zapisano w `docs/acceptance/phase12-release-20260915-42dc5f4d437e.md`. Protokół czeka na `dev-docs-review`; A1 pozostaje niezaznaczone do pozytywnego wyniku.
+- Właściciel zezwolił na dalsze lokalne commity wykonywane według potrzeby po zielonej kontroli, a następnie także na potrzebne pushe do `https://github.com/PawelSzmit/Firemka`. Repozytorium GitHub jest publiczne, ma gałąź `main`, pojedynczy własny commit startowy z krótkim `README.md`, a zalogowane konto `PawelSzmit` ma uprawnienie administratora. Zgoda nie obejmuje wdrożenia.
+- Następny krok: siódme ponowne `dev-docs-review` Fazy 12 ograniczone do protokołu i powiązania kod → wersja → obrazy.
 
 ## Faza 8 — trzecia naprawa i końcowe review 2026-09-14
 

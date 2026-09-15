@@ -1,8 +1,8 @@
 # Firemka — wykonanie aplikacji do własnej JDG
 
 Stan: aktywne zadanie  
-Ostatnia aktualizacja: 2026-09-13  
-Gałąź: `main` — lokalne repozytorium Git zainicjowane, bez commitów
+Ostatnia aktualizacja: 2026-09-15  
+Gałąź: `main` — pierwszy lokalny commit kodu `42dc5f4d437e`; bez pushu i wdrożenia
 
 ## Cel
 
@@ -21,7 +21,7 @@ Poza pierwszą wersją pozostają ryczałt, pełne roczne PIT, częściowe płat
 3. Jeśli review ma błąd P1 lub P2 w zakresie bieżącej fazy, kolejny `dev-docs-execute` wykonuje wyłącznie jego naprawę, po czym następuje kolejne review tej samej fazy.
 4. Faza następna może zacząć się tylko po bramce review bez P1/P2, z jednym wyjątkiem: zewnętrzna bramka wyraźnie odroczona przez plan źródłowy nie blokuje niezależnego, bezpiecznego zakresu technicznego. Pozostaje widoczna i blokuje dokładnie te jednostki oraz działania produkcyjne, dla których plan jej wymaga.
 5. Kod jest tworzony test-first: najpierw test, obserwacja jego oczekiwanej porażki, minimalna implementacja, potem test zielony.
-6. Nie tworzymy automatycznie commitów, pushy ani wdrożeń. Rzeczywiste działania z KSeF, ZUS, US, SMTP i VPS będą wykonywane wyłącznie w warunkach opisanych w poszczególnych bramkach.
+6. Właściciel zezwolił na samodzielne lokalne commity po zielonej weryfikacji logicznego etapu oraz potrzebne pushe do `https://github.com/PawelSzmit/Firemka`. Wdrożenie nadal wymaga osobnego polecenia. Rzeczywiste działania z KSeF, ZUS, US, SMTP i VPS będą wykonywane wyłącznie w warunkach opisanych w poszczególnych bramkach.
 
 ## Fazy
 

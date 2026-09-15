@@ -1,6 +1,6 @@
 # Co pozostało do uruchomienia pilotażu Firemki
 
-Stan na 2026-09-15: aplikacja i lokalna bramka techniczna są gotowe, ale pilotaż pozostaje zablokowany. Ten dokument opisuje działania w kolejności, która ogranicza ryzyko. Samo przeczytanie ani wykonanie lokalnych przygotowań nie zmienia VPS-a i nie uruchamia produkcji.
+Stan na 2026-09-15: aplikacja i lokalna bramka techniczna są gotowe, a Krok 1 zakończył się zatwierdzonym protokołem pierwszego wydania. Pilotaż pozostaje zablokowany. Ten dokument opisuje działania w kolejności, która ogranicza ryzyko. Samo przeczytanie ani wykonanie lokalnych przygotowań nie zmienia VPS-a i nie uruchamia produkcji.
 
 Nie wklejaj do rozmowy haseł, tokenu KSeF, danych SMTP, kodów odzyskiwania ani prywatnego klucza SSH. Codex wskaże właściwe bezpieczne miejsce dopiero podczas konkretnego kroku.
 
@@ -12,9 +12,9 @@ Potrzebna jest zgoda właściciela na pierwszy lokalny commit. Kolejność jest 
 2. Codex tworzy pierwszy lokalny commit zawierający sprawdzony kod, testy, dokumentację i zatwierdzone artefakty odbiorowe.
 3. Dopiero ze skrótu tego commita powstaje identyfikator wydania. Z dokładnie tej czystej rewizji Codex buduje i skanuje obrazy WWW, workera, Caddy i PostgreSQL.
 4. Codex dopisuje do protokołu skrót kodu, identyfikator wydania, identyfikatory obrazów oraz najnowszą migrację `20260914170341_Phase11Backups`.
-5. Protokół jest przygotowany do osobnego, małego commita dowodowego. Codex nie tworzy go bez kolejnej zgody właściciela.
+5. Protokół jest przygotowany do osobnego, małego commita dowodowego. Zgodnie z późniejszą zgodą właściciela Codex może utworzyć lokalny commit po zielonym review protokołu i wysłać sprawdzone commity do `https://github.com/PawelSzmit/Firemka`; wdrożenie nadal wymaga osobnego polecenia.
 
-A1 można zamknąć dopiero po zapisaniu i zatwierdzeniu tego protokołu. Zgoda na pierwszy commit nie jest zgodą na drugi commit dowodowy, push ani wdrożenie.
+A1 można zamknąć dopiero po zapisaniu i zatwierdzeniu tego protokołu. Zgoda na lokalne commity i push do wskazanego repozytorium nie jest zgodą na wdrożenie.
 
 ## Krok 2 — przygotować docelowy VPS bez zmieniania go
 
@@ -24,7 +24,7 @@ Codex najpierw wykona tylko odczytowy audyt systemu, aktualizacji, zapory, port�
 
 ## Krok 3 — osobno zatwierdzić ograniczone wdrożenie
 
-Dopiero osobne polecenie właściciela może zezwolić na push i wdrożenie. Przed nim trzeba wskazać prywatne miejsce kodu oraz potwierdzić punkt powrotu. Pierwsze uruchomienie pozostawia produkcyjny KSeF, SMTP i automatyczne wystawianie wyłączone.
+Właściciel zezwolił już na push sprawdzonych commitów do wskazanego repozytorium GitHub. Dopiero osobne polecenie może zezwolić na wdrożenie. Przed wdrożeniem trzeba potwierdzić punkt powrotu. Pierwsze uruchomienie pozostawia produkcyjny KSeF, SMTP i automatyczne wystawianie wyłączone.
 
 Codex uruchomi migrację jako osobny krok, sprawdzi HTTPS, certyfikat, nagłówki, `/health`, prywatność bazy, ograniczenia kontenerów i działanie alarmu. Po wdrożeniu obserwacja trwa co najmniej 30 minut. Ten etap obejmuje A4–A5; A3 zostanie zamknięte dopiero po zielonym audycie prawdziwego VPS-a.
 
@@ -66,4 +66,4 @@ Ten etap obejmuje F1–F6. Dopiero F6 oraz komplet A1–F5 pozwalają zmienić s
 
 ## Najbliższa potrzebna decyzja
 
-Aby przejść do Kroku 1, właściciel może napisać: „Tak, utwórz pierwszy lokalny commit. Bez pushu i bez wdrożenia”.
+Krok 1 jest zakończony lokalnie. Do Kroku 2 właściciel podaje nazwę domeny, zapisaną nazwę połączenia Maca z VPS-em oraz wybiera kanał alarmowy, który rzeczywiście zauważy. Nie podaje hasła, tokenu ani prywatnego klucza.

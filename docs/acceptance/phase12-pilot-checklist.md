@@ -6,7 +6,7 @@ Każdy punkt wymaga daty, osoby wykonującej, krótkiego wyniku i ścieżki do d
 
 ## A. Wersja i środowisko
 
-- [ ] **A1.** Zapisano identyfikator kodu, obrazu WWW, workera, Caddy i PostgreSQL oraz najnowszą migrację.
+- [x] **A1.** Zapisano identyfikator kodu, obrazu WWW, workera, Caddy i PostgreSQL oraz najnowszą migrację. — **2026-09-15, Codex, ZALICZONE lokalnie**; dowód: [protokół pierwszego wydania](phase12-release-20260915-42dc5f4d437e.md) i [review protokołu](../active/firemka-jdg/review-faza-12-recheck-7.md).
 - [x] **A2.** Obrazy są przypięte skrótami, pełna lokalna bramka jest zielona, skan NuGet nie zgłasza znanej podatności, a skan obrazów nie zgłasza podatności krytycznej ani wysokiej. — **2026-09-15, Codex, ZALICZONE**; dowód: [lokalna bramka Fazy 12](phase12-local-gate.md).
 - [ ] **A3.** VPS ma wspierany system, aktualizacje bezpieczeństwa, aktywną zaporę i publiczne wyłącznie zatwierdzone porty.
 - [ ] **A4.** Kontenery mają ograniczone uprawnienia, zasoby i rotację logów; baza nie ma portu publicznego.

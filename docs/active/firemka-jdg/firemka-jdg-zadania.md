@@ -64,6 +64,8 @@ Właściciel review: Codex przez `dev-docs-review`. Wykonanie kolejnej fazy jest
 - [x] Przygotowano prowadzenie właściciela przez pozostałe bramki — `docs/acceptance/phase12-owner-handoff.md` mapuje A1–F6 na osiem bezpiecznie uporządkowanych kroków i wyraźnie rozdziela commit, push oraz wdrożenie.
 - [x] Piąte ponowne review fazy 12 — znaleziono 1× P2 w kolejności nadawania identyfikatora wersji i budowania obrazów; szczegóły w `review-faza-12-recheck-5.md`.
 - [x] Szóste ponowne review fazy 12 — P2 zamknięte; kolejność pierwszego commita, obrazów i późniejszego protokołu jest odtwarzalna, 0× P1/P2/P3 w tym zakresie. Szczegóły w `review-faza-12-recheck-6.md`.
+- [x] Pierwszy lokalny commit i obrazy wydania — zapisano commit `42dc5f4d437e`, utworzono wersję `20260915-42dc5f4d437e`, zbudowano z czystej rewizji cztery oznaczone obrazy i zapisano ich identyfikatory w protokole; każdy skan ma `0C / 0H`.
+- [x] Siódme ponowne review fazy 12 — A1 zaliczone; protokół, pełne etykiety i identyfikatory czterech obrazów są zgodne z pierwszym commitem, 0× P1/P2/P3 w tym zakresie. Szczegóły w `review-faza-12-recheck-7.md`.
 
 ## Do poprawy po review fazy 12
 
