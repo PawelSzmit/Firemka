@@ -2,13 +2,25 @@
 
 Ostatnia aktualizacja: 2026-09-15
 
+## Faza 12 — ósme ponowne review: publikacja Git 2026-09-15
+
+- Ponowne sprawdzenie po pierwszym pushu potwierdziło zachowanie obu historii Git bez `force push`; zdalny startowy commit `24483d154b72d5d9c7981da418b82f371b57fc33` pozostaje osiągalny, a stan połączenia historii był `f6bcb44901001519b5c0db9ab1af413da978013b`.
+- Lokalny `HEAD`, `origin/main`, `git ls-remote` oraz API GitHuba wskazały ten sam zdalny stan podczas kontroli. Repozytorium jest publiczne, a push obejmował wyłącznie historię Git; nie wysłano obrazów kontenerów i nie wykonano wdrożenia.
+- Kontrola całego drzewa nie wykazała sekretów, plików tymczasowych ani przypadkowych kopii lockfile; po przeniesieniu obcego `.git/refs/.DS_Store` do Kosza `git fsck --no-dangling` przechodzi.
+- Review `review-faza-12-recheck-8.md` ma wynik **0× P1, 0× P2, 0× P3**. Krok 1 publikacji jest zamknięty, lecz cała Faza 12 nadal czeka na zewnętrzne bramki A3–F6.
+- Następny krok to Krok 2: wyłącznie odczytowy audyt docelowego VPS-a po podaniu domeny, potwierdzeniu nazwy połączenia Maca oraz wyborze kanału alarmowego. Sam audyt nie zmienia serwera.
+
 ## Faza 12 — siódme ponowne review 2026-09-15
 
+- Po review utworzono commit dowodowy `6317408d16c3ce8d292a98977697b322015898e2`. Zdalny startowy commit z krótkim `README.md` połączono bez `force push`; commit scalający `f6bcb44901001519b5c0db9ab1af413da978013b` zachowuje obie historie i pełniejszą instrukcję lokalną.
+- Pierwszy push do publicznego `https://github.com/PawelSzmit/Firemka` zakończył się powodzeniem. Lokalny `HEAD`, `origin/main`, `git ls-remote` i API GitHuba wskazywały ten sam skrót `f6bcb44901001519b5c0db9ab1af413da978013b`; gałąź lokalna śledzi `origin/main`.
+- Przed pushem powtórzono kontrolę całego drzewa. Nie znaleziono pliku `.env`, prywatnych kluczy, wysokoprawdopodobnych sekretów, katalogów tymczasowych ani przypadkowych kopii lockfile. Ukryty `.git/refs/.DS_Store`, który zakłócał `git fsck`, przeniesiono do Kosza; ponowne `git fsck --no-dangling` przeszło.
+- Push obejmował wyłącznie kod i dokumentację Git. Obrazy kontenerów nie zostały wysłane, a aplikacja nie została wdrożona.
 - `review-faza-12-recheck-7.md` ma wynik **0× P1, 0× P2, 0× P3** w zakresie identyfikacji pierwszego wydania. Commit, wersja, cztery pełne identyfikatory obrazów, etykiety OCI i najnowsza migracja są spójne.
 - Każdy z czterech obrazów został ponownie przeskanowany. WWW, worker, Caddy i PostgreSQL mają po `0C / 0H`. Chwilowa blokada pamięci skanera przy równoległej próbie WWW zniknęła przy sekwencyjnym powtórzeniu bez zmiany obrazu.
 - Protokół `docs/acceptance/phase12-release-20260915-42dc5f4d437e.md` jest zatwierdzony, A1 checklisty jest zaliczone lokalnie, a Krok 1 instrukcji właściciela jest zakończony.
-- Granica pozostaje jawna: obrazy są lokalne dla `linux/arm64`; przyszłe skróty prywatnego rejestru i zgodność architektury docelowego VPS-a wymagają osobnego dowodu. Nie wykonano pushu ani wdrożenia.
-- Następny etap to Krok 2 — wyłącznie odczytowe przygotowanie i wykonanie audytu po wskazaniu domeny, zapisanej nazwy połączenia do VPS-a oraz rzeczywistego kanału alarmowego.
+- Granica pozostaje jawna: obrazy są lokalne dla `linux/arm64`; przyszłe skróty prywatnego rejestru i zgodność architektury docelowego VPS-a wymagają osobnego dowodu. W chwili tego review nie wykonano jeszcze pushu; push nastąpił później po osobnej kontroli publikacji. Wdrożenia nadal nie wykonano.
+- Następny etap po review publikacji to Krok 2 — wyłącznie odczytowe przygotowanie i wykonanie audytu po wskazaniu domeny, potwierdzeniu zapisanej nazwy połączenia do VPS-a oraz rzeczywistego kanału alarmowego.
 
 ## Faza 12 — pierwszy commit i obrazy wydania 2026-09-15
 

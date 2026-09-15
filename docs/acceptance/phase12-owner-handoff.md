@@ -1,6 +1,6 @@
 # Co pozostało do uruchomienia pilotażu Firemki
 
-Stan na 2026-09-15: aplikacja i lokalna bramka techniczna są gotowe, a Krok 1 zakończył się zatwierdzonym protokołem pierwszego wydania. Pilotaż pozostaje zablokowany. Ten dokument opisuje działania w kolejności, która ogranicza ryzyko. Samo przeczytanie ani wykonanie lokalnych przygotowań nie zmienia VPS-a i nie uruchamia produkcji.
+Stan na 2026-09-15: aplikacja i lokalna bramka techniczna są gotowe, a Krok 1 zakończył się zatwierdzonym protokołem pierwszego wydania i pierwszym pushem kodu do GitHuba. Pilotaż pozostaje zablokowany. Ten dokument opisuje działania w kolejności, która ogranicza ryzyko. Samo przeczytanie ani wykonanie lokalnych przygotowań nie zmienia VPS-a i nie uruchamia produkcji.
 
 Nie wklejaj do rozmowy haseł, tokenu KSeF, danych SMTP, kodów odzyskiwania ani prywatnego klucza SSH. Codex wskaże właściwe bezpieczne miejsce dopiero podczas konkretnego kroku.
 

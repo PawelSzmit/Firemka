@@ -66,6 +66,9 @@ Właściciel review: Codex przez `dev-docs-review`. Wykonanie kolejnej fazy jest
 - [x] Szóste ponowne review fazy 12 — P2 zamknięte; kolejność pierwszego commita, obrazów i późniejszego protokołu jest odtwarzalna, 0× P1/P2/P3 w tym zakresie. Szczegóły w `review-faza-12-recheck-6.md`.
 - [x] Pierwszy lokalny commit i obrazy wydania — zapisano commit `42dc5f4d437e`, utworzono wersję `20260915-42dc5f4d437e`, zbudowano z czystej rewizji cztery oznaczone obrazy i zapisano ich identyfikatory w protokole; każdy skan ma `0C / 0H`.
 - [x] Siódme ponowne review fazy 12 — A1 zaliczone; protokół, pełne etykiety i identyfikatory czterech obrazów są zgodne z pierwszym commitem, 0× P1/P2/P3 w tym zakresie. Szczegóły w `review-faza-12-recheck-7.md`.
+- [x] Pierwszy push Git — publiczne repozytorium `PawelSzmit/Firemka` podłączono jako `origin`, zachowano jego startowy commit bez nadpisania historii, a lokalny i zdalny `main` potwierdzono na `f6bcb44901001519b5c0db9ab1af413da978013b`.
+- [x] Ósme ponowne review fazy 12 — połączenie historii, zdalny stan, granice publikacji i brak niezamierzonego wdrożenia potwierdzone bez P1/P2/P3. Szczegóły w `review-faza-12-recheck-8.md`.
+- [ ] Krok 2 Fazy 12 — po uzyskaniu domeny, potwierdzenia nazwy połączenia Maca z docelowym VPS-em i kanału alarmowego wykonać wyłącznie odczytowy audyt serwera.
 
 ## Do poprawy po review fazy 12
 

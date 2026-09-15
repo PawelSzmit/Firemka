@@ -2,7 +2,7 @@
 
 Stan: aktywne zadanie  
 Ostatnia aktualizacja: 2026-09-15  
-Gałąź: `main` — pierwszy lokalny commit kodu `42dc5f4d437e`; bez pushu i wdrożenia
+Gałąź: `main` — śledzi `origin/main` w `https://github.com/PawelSzmit/Firemka`; pierwszy push wykonany, bez wdrożenia
 
 ## Cel
 
