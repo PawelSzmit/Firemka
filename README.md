@@ -1,5 +1,7 @@
 # Firemka
 
+Prosta aplikacja do prowadzenia księgowości w małej firmie.
+
 Prywatna aplikacja dla jednoosobowej działalności. Obecna wersja techniczna obejmuje profil firmy, dokumenty, faktury, reguły kosztowe, miesięczne i roczne rozliczenie, pliki urzędowe, płatności, powiadomienia oraz zaszyfrowane kopie. Integracje produkcyjne pozostają wyłączone do czasu podpisanego pilotażu i zewnętrznego potwierdzenia wyników.
 
 ## Co działa w fazie 1
